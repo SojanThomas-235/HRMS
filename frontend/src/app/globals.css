@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --color-bg:          255 255 255;
+    --color-bg-subtle:   249 250 251;
+    --color-bg-muted:    243 244 246;
+    --color-surface:     255 255 255;
+    --color-border:      229 231 235;
+    --color-border-strong: 209 213 219;
+    --color-text:        17  24  39;
+    --color-text-muted:  107 114 128;
+    --color-text-subtle: 156 163 175;
+  }
+
+  .dark {
+    --color-bg:          15  23  42;
+    --color-bg-subtle:   30  41  59;
+    --color-bg-muted:    51  65  85;
+    --color-surface:     30  41  59;
+    --color-border:      51  65  85;
+    --color-border-strong: 71 85 105;
+    --color-text:        248 250 252;
+    --color-text-muted:  148 163 184;
+    --color-text-subtle: 100 116 139;
+  }
+
+  * {
+    border-color: rgb(var(--color-border));
+  }
+
+  body {
+    @apply antialiased;
+    background-color: rgb(var(--color-bg));
+    color: rgb(var(--color-text));
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+}

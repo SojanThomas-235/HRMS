@@ -1,0 +1,21 @@
+{
+  "name": "hrms",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --filter=frontend dev & bun run --filter=@hrms/backend dev",
+    "dev:frontend": "bun run --filter=frontend dev",
+    "dev:backend": "bun run --filter=@hrms/backend dev",
+    "build": "bun run --filter=* build",
+    "lint": "bun run --filter=* lint",
+    "typecheck": "bun run --filter=* typecheck",
+    "db:migrate": "cd backend && bun --env-file .env prisma migrate dev",
+    "db:seed": "cd backend && bun --env-file .env prisma db seed",
+    "db:studio": "cd backend && bun --env-file .env prisma studio",
+    "db:reset": "cd backend && bun --env-file .env prisma migrate reset"
+  }
+}

@@ -1,0 +1,1089 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ENUMS
+// ══════════════════════════════════════════════════════════════════
+
+enum UserRole {
+  EMPLOYEE
+  MANAGER
+  HR_ADMIN
+  FINANCE_ADMIN
+  SYSTEM_ADMIN
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  ON_NOTICE
+  EXITED
+}
+
+enum TaskStatus {
+  ASSIGNED
+  IN_PROGRESS
+  SUBMITTED
+  PENDING_REVIEW
+  ACCEPTED
+  RETURNED
+  OVERDUE
+}
+
+enum TaskCompletionStatus {
+  FULLY_COMPLETED
+  PARTIALLY_COMPLETED
+  BLOCKED
+}
+
+enum TimeEntryStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AssetStatus {
+  DRAFT
+  PENDING_APPROVAL
+  ACTIVE
+  ARCHIVED
+  DEPRECATED
+}
+
+enum QualVerificationStatus {
+  PENDING
+  VERIFIED
+  FLAGGED
+}
+
+enum BeneficiaryStatus {
+  PENDING
+  ACTIVE
+  REJECTED
+  REMOVED
+}
+
+enum RewardNominationStatus {
+  DRAFT
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum RewardPaymentStatus {
+  PENDING
+  SCHEDULED
+  PAID
+}
+
+enum VersionType {
+  MAJOR
+  MINOR
+}
+
+// ══════════════════════════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════════════════════════
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  role         UserRole  @default(EMPLOYEE)
+  isActive     Boolean   @default(true)
+  employeeId   String?   @unique
+  employee     Employee? @relation(fields: [employeeId], references: [id])
+  refreshTokens RefreshToken[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  @@index([email])
+  @@index([role])
+}
+
+model RefreshToken {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash  String
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SYSTEM CONFIG ENTITIES
+// ══════════════════════════════════════════════════════════════════
+
+model DepartmentMaster {
+  id           String     @id @default(cuid())
+  name         String     @unique
+  code         String     @unique
+  description  String?
+  isActive     Boolean    @default(true)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  employees    Employee[]
+}
+
+model DesignationMaster {
+  id          String     @id @default(cuid())
+  title       String     @unique
+  code        String     @unique
+  grade       String?
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  employees   Employee[]
+}
+
+model SessionConfig {
+  id                      String   @id @default(cuid())
+  accessTokenTtlMinutes   Int      @default(15)
+  refreshTokenTtlDays     Int      @default(7)
+  maxLoginAttempts        Int      @default(5)
+  lockoutDurationMinutes  Int      @default(30)
+  effectiveFrom           DateTime
+  effectiveTo             DateTime?
+  isActive                Boolean  @default(true)
+  changeReason            String
+  createdBy               String
+  createdAt               DateTime @default(now())
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BPV CONFIG ENTITIES
+// ══════════════════════════════════════════════════════════════════
+
+model BpvWeightConfig {
+  id            String    @id @default(cuid())
+  educationPct  Float
+  experiencePct Float
+  orgProfilePct Float
+  skillsPct     Float
+  certsPct      Float
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  isActive      Boolean   @default(true)
+  changeReason  String
+  createdBy     String
+  createdAt     DateTime  @default(now())
+  bpvScores     BpvScore[]
+
+  @@index([isActive])
+}
+
+model QualificationMaster {
+  id                    String                  @id @default(cuid())
+  name                  String                  @unique
+  code                  String                  @unique
+  scoreContribution     Float
+  sortOrder             Int                     @default(0)
+  isActive              Boolean                 @default(true)
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @updatedAt
+  employeeQualifications EmployeeQualification[]
+}
+
+model ExperienceBandMaster {
+  id          String   @id @default(cuid())
+  yearsFrom   Float
+  yearsTo     Float
+  scorePoints Float
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([yearsFrom, yearsTo])
+}
+
+model ExperienceTypeMaster {
+  id                   String               @id @default(cuid())
+  name                 String               @unique
+  code                 String               @unique
+  weightContribution   Float
+  isActive             Boolean              @default(true)
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  employeeExperienceTypes EmployeeExperienceType[]
+}
+
+model OrganizationTypeMaster {
+  id              String             @id @default(cuid())
+  name            String             @unique
+  code            String             @unique
+  scoreContribution Float
+  isActive        Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  experiences     EmployeeExperience[]
+}
+
+model SkillCategoryMaster {
+  id        String        @id @default(cuid())
+  name      String        @unique
+  code      String        @unique
+  isActive  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+  skills    SkillMaster[]
+}
+
+model SkillMaster {
+  id              String              @id @default(cuid())
+  name            String
+  code            String              @unique
+  categoryId      String
+  category        SkillCategoryMaster @relation(fields: [categoryId], references: [id])
+  isActive        Boolean             @default(true)
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  employeeSkills  EmployeeSkill[]
+
+  @@unique([name, categoryId])
+  @@index([categoryId])
+}
+
+model SkillProficiencyMaster {
+  id              String          @id @default(cuid())
+  level           String          @unique
+  code            String          @unique
+  sortOrder       Int
+  scoreMultiplier Float
+  isActive        Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  employeeSkills  EmployeeSkill[]
+}
+
+model CertificationMaster {
+  id                     String                   @id @default(cuid())
+  name                   String                   @unique
+  code                   String                   @unique
+  issuingBody            String
+  scoreContribution      Float
+  hasExpiry              Boolean                  @default(true)
+  expiryAlertDays        Int                      @default(60)
+  isActive               Boolean                  @default(true)
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  employeeCertifications EmployeeCertification[]
+}
+
+model BpvScoreCapConfig {
+  id            String    @id @default(cuid())
+  grade         String?
+  designationId String?
+  maxScore      Float
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  isActive      Boolean   @default(true)
+  changeReason  String
+  createdBy     String
+  createdAt     DateTime  @default(now())
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TIME & TASK CONFIG ENTITIES
+// ══════════════════════════════════════════════════════════════════
+
+model TimeBlockMaster {
+  id          String      @id @default(cuid())
+  label       String
+  hours       Float
+  sortOrder   Int         @default(0)
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  timeEntries TimeEntry[]
+}
+
+model TaskCategoryMaster {
+  id                String               @id @default(cuid())
+  name              String               @unique
+  code              String               @unique
+  benchmarkHours    Float
+  isActive          Boolean              @default(true)
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  tasks             Task[]
+  qualityCriterias  QualityCriteriaMaster[]
+}
+
+model QualityRatingMaster {
+  id          String   @id @default(cuid())
+  label       String   @unique
+  numericValue Float
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  tasks       Task[]
+}
+
+model QualityCriteriaMaster {
+  id              String             @id @default(cuid())
+  categoryId      String
+  category        TaskCategoryMaster @relation(fields: [categoryId], references: [id])
+  criteriaText    String
+  sortOrder       Int                @default(0)
+  isActive        Boolean            @default(true)
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  taskCriterias   TaskQualityCriteria[]
+
+  @@index([categoryId])
+}
+
+// ══════════════════════════════════════════════════════════════════
+// SALARY CONFIG ENTITIES
+// ══════════════════════════════════════════════════════════════════
+
+model SalaryGradeMaster {
+  id             String        @id @default(cuid())
+  grade          String        @unique
+  component1Pct  Float
+  component2Pct  Float
+  component2Rate Float
+  effectiveFrom  DateTime
+  effectiveTo    DateTime?
+  isActive       Boolean       @default(true)
+  changeReason   String
+  createdBy      String
+  createdAt      DateTime      @default(now())
+  salaryBands    SalaryBandMaster[]
+  salaryRecords  SalaryRecord[]
+}
+
+model SalaryBandMaster {
+  id            String            @id @default(cuid())
+  gradeId       String
+  grade         SalaryGradeMaster @relation(fields: [gradeId], references: [id])
+  bpvScoreFrom  Float
+  bpvScoreTo    Float
+  salaryFrom    Float
+  salaryTo      Float
+  currency      String            @default("INR")
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  isActive      Boolean           @default(true)
+  changeReason  String
+  createdBy     String
+  createdAt     DateTime          @default(now())
+
+  @@index([gradeId])
+}
+
+model ReviewCycleConfig {
+  id            String    @id @default(cuid())
+  cycleType     String    // MONTHLY | QUARTERLY | ANNUALLY
+  departmentId  String?
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  isActive      Boolean   @default(true)
+  changeReason  String
+  createdBy     String
+  createdAt     DateTime  @default(now())
+}
+
+// ══════════════════════════════════════════════════════════════════
+// EFFICIENCY CONFIG ENTITIES
+// ══════════════════════════════════════════════════════════════════
+
+model EfficiencyWeightConfig {
+  id                  String    @id @default(cuid())
+  completionRatePct   Float
+  qualityScorePct     Float
+  timeEfficiencyPct   Float
+  effectiveFrom       DateTime
+  effectiveTo         DateTime?
+  isActive            Boolean   @default(true)
+  changeReason        String
+  createdBy           String
+  createdAt           DateTime  @default(now())
+  efficiencyScores    EfficiencyScore[]
+}
+
+model EfficiencyTierMaster {
+  id                 String   @id @default(cuid())
+  tierName           String
+  scoreFrom          Float
+  scoreTo            Float
+  incentivePct       Float
+  sortOrder          Int      @default(0)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  efficiencyScores   EfficiencyScore[]
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ASSET CONFIG ENTITIES
+// ══════════════════════════════════════════════════════════════════
+
+model AssetTypeMaster {
+  id           String             @id @default(cuid())
+  name         String             @unique
+  code         String             @unique
+  description  String?
+  isActive     Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  assets       Asset[]
+  docRequirements DocRequirementConfig[]
+  complianceThreshold ComplianceThresholdConfig[]
+}
+
+model DocumentationTypeMaster {
+  id          String               @id @default(cuid())
+  name        String               @unique
+  code        String               @unique
+  description String?
+  isActive    Boolean              @default(true)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  docRequirements DocRequirementConfig[]
+  assetDocs   AssetDocumentation[]
+}
+
+model DocRequirementConfig {
+  id              String                  @id @default(cuid())
+  assetTypeId     String
+  assetType       AssetTypeMaster         @relation(fields: [assetTypeId], references: [id])
+  docTypeId       String
+  docType         DocumentationTypeMaster @relation(fields: [docTypeId], references: [id])
+  isMandatory     Boolean                 @default(true)
+  effectiveFrom   DateTime
+  effectiveTo     DateTime?
+  isActive        Boolean                 @default(true)
+  changeReason    String
+  createdBy       String
+  createdAt       DateTime                @default(now())
+
+  @@unique([assetTypeId, docTypeId])
+  @@index([assetTypeId])
+}
+
+model ComplianceThresholdConfig {
+  id            String          @id @default(cuid())
+  assetTypeId   String?
+  assetType     AssetTypeMaster? @relation(fields: [assetTypeId], references: [id])
+  thresholdPct  Float           @default(80)
+  action        String          // FLAG_ONLY | NOTIFY_MANAGER | BLOCK | AFFECT_EFFICIENCY
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  isActive      Boolean         @default(true)
+  changeReason  String
+  createdBy     String
+  createdAt     DateTime        @default(now())
+}
+
+// ══════════════════════════════════════════════════════════════════
+// REWARD CONFIG ENTITIES
+// ══════════════════════════════════════════════════════════════════
+
+model RewardTypeMaster {
+  id           String             @id @default(cuid())
+  name         String             @unique
+  code         String             @unique
+  description  String?
+  isActive     Boolean            @default(true)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  nominations  RewardNomination[]
+  formulaConfigs RewardFormulaConfig[]
+}
+
+model RewardBasisMaster {
+  id          String             @id @default(cuid())
+  name        String             @unique
+  code        String             @unique
+  description String?
+  isActive    Boolean            @default(true)
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  nominations RewardNomination[]
+}
+
+model RewardFormulaConfig {
+  id              String           @id @default(cuid())
+  rewardTypeId    String
+  rewardType      RewardTypeMaster @relation(fields: [rewardTypeId], references: [id])
+  formulaDescription String
+  parameters      Json
+  effectiveFrom   DateTime
+  effectiveTo     DateTime?
+  isActive        Boolean          @default(true)
+  changeReason    String
+  createdBy       String
+  createdAt       DateTime         @default(now())
+
+  @@index([rewardTypeId])
+}
+
+model RewardContributionConfig {
+  id            String    @id @default(cuid())
+  splitMethod   String    // EQUAL | BY_ROLE | BY_MANAGER_DISCRETION
+  creatorPct    Float?
+  contributorPct Float?
+  effectiveFrom DateTime
+  effectiveTo   DateTime?
+  isActive      Boolean   @default(true)
+  changeReason  String
+  createdBy     String
+  createdAt     DateTime  @default(now())
+}
+
+model RewardCapConfig {
+  id              String    @id @default(cuid())
+  grade           String?
+  rewardTypeCode  String?
+  maxAmountPerYear Float
+  currency        String    @default("INR")
+  effectiveFrom   DateTime
+  effectiveTo     DateTime?
+  isActive        Boolean   @default(true)
+  changeReason    String
+  createdBy       String
+  createdAt       DateTime  @default(now())
+}
+
+// ══════════════════════════════════════════════════════════════════
+// BENEFICIARY CONFIG ENTITIES
+// ══════════════════════════════════════════════════════════════════
+
+model BeneficiaryTypeMaster {
+  id           String        @id @default(cuid())
+  name         String        @unique
+  code         String        @unique
+  description  String?
+  isActive     Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  beneficiaries Beneficiary[]
+  docConfigs   BeneficiaryDocConfig[]
+}
+
+model BeneficiaryDocConfig {
+  id                String                @id @default(cuid())
+  beneficiaryTypeId String
+  beneficiaryType   BeneficiaryTypeMaster @relation(fields: [beneficiaryTypeId], references: [id])
+  docName           String
+  isMandatory       Boolean               @default(true)
+  effectiveFrom     DateTime
+  effectiveTo       DateTime?
+  isActive          Boolean               @default(true)
+  changeReason      String
+  createdBy         String
+  createdAt         DateTime              @default(now())
+
+  @@index([beneficiaryTypeId])
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CORE: EMPLOYEE
+// ══════════════════════════════════════════════════════════════════
+
+model Employee {
+  id              String          @id @default(cuid())
+  employeeCode    String          @unique
+  fullName        String
+  email           String          @unique
+  phone           String?
+  dateOfBirth     DateTime?
+  dateOfJoining   DateTime
+  status          EmployeeStatus  @default(ACTIVE)
+  departmentId    String
+  department      DepartmentMaster   @relation(fields: [departmentId], references: [id])
+  designationId   String
+  designation     DesignationMaster  @relation(fields: [designationId], references: [id])
+  managerId       String?
+  manager         Employee?          @relation("EmployeeManager", fields: [managerId], references: [id])
+  directReports   Employee[]         @relation("EmployeeManager")
+  exitDate        DateTime?
+
+  // Relations
+  user            User?
+  qualifications  EmployeeQualification[]
+  experiences     EmployeeExperience[]
+  skills          EmployeeSkill[]
+  certifications  EmployeeCertification[]
+  bpvScores       BpvScore[]
+  salaryRecords   SalaryRecord[]
+  assignedTasks   Task[]          @relation("TaskAssignee")
+  createdTasks    Task[]          @relation("TaskCreator")
+  timeEntries     TimeEntry[]
+  approvedTimeEntries TimeEntry[] @relation("TimeEntryApprover")
+  efficiencyScores EfficiencyScore[]
+  createdAssets   Asset[]         @relation("AssetCreator")
+  ownedAssets     Asset[]         @relation("AssetOwner")
+  assetOwnerships AssetOwnership[]
+  contributionRecords ContributionRecord[]
+  rewardRecords   RewardRecord[]
+  beneficiaries   Beneficiary[]
+  auditLogs       AuditLog[]
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  deletedAt       DateTime?
+
+  @@index([departmentId])
+  @@index([designationId])
+  @@index([managerId])
+  @@index([status])
+}
+
+model EmployeeQualification {
+  id                  String                 @id @default(cuid())
+  employeeId          String
+  employee            Employee               @relation(fields: [employeeId], references: [id])
+  qualificationTypeId String
+  qualificationType   QualificationMaster    @relation(fields: [qualificationTypeId], references: [id])
+  institution         String
+  yearOfCompletion    Int
+  grade               String?
+  certificateFileRef  String?
+  verificationStatus  QualVerificationStatus @default(PENDING)
+  verificationNote    String?
+  verifiedBy          String?
+  verifiedAt          DateTime?
+  createdAt           DateTime               @default(now())
+  updatedAt           DateTime               @updatedAt
+
+  @@index([employeeId])
+}
+
+model EmployeeExperience {
+  id                 String                 @id @default(cuid())
+  employeeId         String
+  employee           Employee               @relation(fields: [employeeId], references: [id])
+  organizationName   String
+  organizationTypeId String
+  organizationType   OrganizationTypeMaster @relation(fields: [organizationTypeId], references: [id])
+  designationHeld    String
+  startDate          DateTime
+  endDate            DateTime?
+  isCurrent          Boolean                @default(false)
+  yearsCalculated    Float
+  experienceTypes    EmployeeExperienceType[]
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+
+  @@index([employeeId])
+}
+
+model EmployeeExperienceType {
+  id                 String               @id @default(cuid())
+  experienceId       String
+  experience         EmployeeExperience   @relation(fields: [experienceId], references: [id], onDelete: Cascade)
+  experienceTypeId   String
+  experienceType     ExperienceTypeMaster @relation(fields: [experienceTypeId], references: [id])
+
+  @@unique([experienceId, experienceTypeId])
+}
+
+model EmployeeSkill {
+  id                String                 @id @default(cuid())
+  employeeId        String
+  employee          Employee               @relation(fields: [employeeId], references: [id])
+  skillId           String
+  skill             SkillMaster            @relation(fields: [skillId], references: [id])
+  proficiencyLevelId String
+  proficiencyLevel  SkillProficiencyMaster @relation(fields: [proficiencyLevelId], references: [id])
+  yearsOfExperience Float
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+
+  @@unique([employeeId, skillId])
+  @@index([employeeId])
+}
+
+model EmployeeCertification {
+  id              String              @id @default(cuid())
+  employeeId      String
+  employee        Employee            @relation(fields: [employeeId], references: [id])
+  certificationId String
+  certification   CertificationMaster @relation(fields: [certificationId], references: [id])
+  issueDate       DateTime
+  expiryDate      DateTime?
+  isExpired       Boolean             @default(false)
+  certificateFileRef String?
+  renewedFromId   String?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([employeeId])
+  @@index([expiryDate])
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CORE: BPV SCORES
+// ══════════════════════════════════════════════════════════════════
+
+model BpvScore {
+  id               String          @id @default(cuid())
+  employeeId       String
+  employee         Employee        @relation(fields: [employeeId], references: [id])
+  score            Float
+  educationScore   Float
+  experienceScore  Float
+  orgScore         Float
+  skillScore       Float
+  certScore        Float
+  configVersionId  String
+  configVersion    BpvWeightConfig @relation(fields: [configVersionId], references: [id])
+  triggerReason    String
+  triggeredBy      String
+  inputSnapshot    Json
+  calculatedAt     DateTime        @default(now())
+
+  @@index([employeeId])
+  @@index([calculatedAt])
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CORE: SALARY
+// ══════════════════════════════════════════════════════════════════
+
+model SalaryRecord {
+  id               String            @id @default(cuid())
+  employeeId       String
+  employee         Employee          @relation(fields: [employeeId], references: [id])
+  period           String            // e.g. "2026-07"
+  component1Amount Float
+  component2Amount Float
+  totalAmount      Float
+  currency         String            @default("INR")
+  bpvScoreUsed     Float
+  gradeId          String
+  grade            SalaryGradeMaster @relation(fields: [gradeId], references: [id])
+  approvedBy       String?
+  approvedAt       DateTime?
+  isLocked         Boolean           @default(false)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@unique([employeeId, period])
+  @@index([employeeId])
+  @@index([period])
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CORE: TASKS & TIME
+// ══════════════════════════════════════════════════════════════════
+
+model Task {
+  id                     String               @id @default(cuid())
+  title                  String
+  description            String
+  deliverables           String
+  categoryId             String
+  category               TaskCategoryMaster   @relation(fields: [categoryId], references: [id])
+  assigneeId             String
+  assignee               Employee             @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  assignedById           String
+  assignedBy             Employee             @relation("TaskCreator", fields: [assignedById], references: [id])
+  status                 TaskStatus           @default(ASSIGNED)
+  expectedCompletionDate DateTime
+  completionStatus       TaskCompletionStatus?
+  blockerNotes           String?
+  qualityRatingId        String?
+  qualityRating          QualityRatingMaster? @relation(fields: [qualityRatingId], references: [id])
+  revisionCount          Int                  @default(0)
+  acceptedAt             DateTime?
+  acceptedBy             String?
+  qualityCriterias       TaskQualityCriteria[]
+  timeEntries            TimeEntry[]
+  contributionRecords    ContributionRecord[]
+  createdAt              DateTime             @default(now())
+  updatedAt              DateTime             @updatedAt
+
+  @@index([assigneeId])
+  @@index([assignedById])
+  @@index([status])
+  @@index([expectedCompletionDate])
+}
+
+model TaskQualityCriteria {
+  id                String                @id @default(cuid())
+  taskId            String
+  task              Task                  @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  criteriaId        String
+  criteria          QualityCriteriaMaster @relation(fields: [criteriaId], references: [id])
+  employeeResponse  String?               // MET | NOT_MET | NA
+  managerResponse   String?               // MET | PARTIALLY_MET | NOT_MET
+
+  @@unique([taskId, criteriaId])
+  @@index([taskId])
+}
+
+model TimeEntry {
+  id            String          @id @default(cuid())
+  employeeId    String
+  employee      Employee        @relation(fields: [employeeId], references: [id])
+  taskId        String
+  task          Task            @relation(fields: [taskId], references: [id])
+  timeBlockId   String
+  timeBlock     TimeBlockMaster @relation(fields: [timeBlockId], references: [id])
+  entryDate     DateTime        @db.Date
+  notes         String?
+  status        TimeEntryStatus @default(PENDING)
+  reviewedBy    String?
+  reviewer      Employee?       @relation("TimeEntryApprover", fields: [reviewedBy], references: [id])
+  reviewedAt    DateTime?
+  rejectionReason String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  @@unique([employeeId, taskId, entryDate])
+  @@index([employeeId])
+  @@index([taskId])
+  @@index([entryDate])
+  @@index([status])
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CORE: EFFICIENCY
+// ══════════════════════════════════════════════════════════════════
+
+model EfficiencyScore {
+  id                  String                 @id @default(cuid())
+  employeeId          String
+  employee            Employee               @relation(fields: [employeeId], references: [id])
+  period              String
+  completionRate      Float
+  qualityScore        Float
+  timeEfficiency      Float
+  finalScore          Float
+  configVersionId     String
+  configVersion       EfficiencyWeightConfig @relation(fields: [configVersionId], references: [id])
+  tierId              String?
+  tier                EfficiencyTierMaster?  @relation(fields: [tierId], references: [id])
+  incentivePct        Float?
+  tasksEvaluated      Int
+  calculatedAt        DateTime               @default(now())
+
+  @@unique([employeeId, period])
+  @@index([employeeId])
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CORE: ASSETS & DOCUMENTATION
+// ══════════════════════════════════════════════════════════════════
+
+model Asset {
+  id              String          @id @default(cuid())
+  name            String
+  description     String?
+  assetTypeId     String
+  assetType       AssetTypeMaster @relation(fields: [assetTypeId], references: [id])
+  creatorId       String
+  creator         Employee        @relation("AssetCreator", fields: [creatorId], references: [id])
+  currentOwnerId  String
+  currentOwner    Employee        @relation("AssetOwner", fields: [currentOwnerId], references: [id])
+  status          AssetStatus     @default(DRAFT)
+  currentVersion  String          @default("1.0")
+  complianceScore Float           @default(0)
+  tags            String[]
+  projectOrDept   String?
+  reviewerId      String?
+  approverId      String?
+  approvedAt      DateTime?
+
+  ownerships      AssetOwnership[]
+  versions        AssetVersion[]
+  documentations  AssetDocumentation[]
+  contributionRecords ContributionRecord[]
+  rewardNominations RewardNomination[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([assetTypeId])
+  @@index([creatorId])
+  @@index([currentOwnerId])
+  @@index([status])
+}
+
+model AssetOwnership {
+  id          String   @id @default(cuid())
+  assetId     String
+  asset       Asset    @relation(fields: [assetId], references: [id])
+  employeeId  String
+  employee    Employee @relation(fields: [employeeId], references: [id])
+  role        String   // CREATOR | CONTRIBUTOR | REVIEWER | APPROVER | OWNER
+  assignedAt  DateTime @default(now())
+  removedAt   DateTime?
+
+  @@index([assetId])
+  @@index([employeeId])
+}
+
+model AssetVersion {
+  id            String      @id @default(cuid())
+  assetId       String
+  asset         Asset       @relation(fields: [assetId], references: [id])
+  version       String
+  versionType   VersionType
+  changeSummary String
+  changedById   String
+  createdAt     DateTime    @default(now())
+
+  @@index([assetId])
+}
+
+model AssetDocumentation {
+  id              String                  @id @default(cuid())
+  assetId         String
+  asset           Asset                   @relation(fields: [assetId], references: [id])
+  docTypeId       String
+  docType         DocumentationTypeMaster @relation(fields: [docTypeId], references: [id])
+  fileRef         String?
+  content         String?
+  isNotApplicable Boolean                 @default(false)
+  naApprovedBy    String?
+  naApprovedAt    DateTime?
+  naReason        String?
+  uploadedById    String
+  uploadedAt      DateTime                @default(now())
+  updatedAt       DateTime                @updatedAt
+
+  @@unique([assetId, docTypeId])
+  @@index([assetId])
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CORE: CONTRIBUTIONS
+// ══════════════════════════════════════════════════════════════════
+
+model ContributionRecord {
+  id           String    @id @default(cuid())
+  employeeId   String
+  employee     Employee  @relation(fields: [employeeId], references: [id])
+  taskId       String?
+  task         Task?     @relation(fields: [taskId], references: [id])
+  assetId      String?
+  asset        Asset?    @relation(fields: [assetId], references: [id])
+  contributionType String // TASK_COMPLETED | ASSET_CREATED | ASSET_CONTRIBUTED
+  qualityRating Float?
+  notes        String?
+  recordedAt   DateTime  @default(now())
+
+  @@index([employeeId])
+  @@index([assetId])
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CORE: REWARDS
+// ══════════════════════════════════════════════════════════════════
+
+model RewardNomination {
+  id              String                 @id @default(cuid())
+  assetId         String
+  asset           Asset                  @relation(fields: [assetId], references: [id])
+  rewardTypeId    String
+  rewardType      RewardTypeMaster       @relation(fields: [rewardTypeId], references: [id])
+  rewardBasisId   String
+  rewardBasis     RewardBasisMaster      @relation(fields: [rewardBasisId], references: [id])
+  measuredValue   Float
+  currency        String                 @default("INR")
+  status          RewardNominationStatus @default(DRAFT)
+  nominatedById   String
+  notes           String?
+  rejectionReason String?
+  approvedById    String?
+  approvedAt      DateTime?
+  rewardRecords   RewardRecord[]
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  @@index([assetId])
+  @@index([status])
+}
+
+model RewardRecord {
+  id             String              @id @default(cuid())
+  nominationId   String
+  nomination     RewardNomination    @relation(fields: [nominationId], references: [id])
+  employeeId     String
+  employee       Employee            @relation(fields: [employeeId], references: [id])
+  role           String              // CREATOR | CONTRIBUTOR
+  splitPct       Float
+  amount         Float
+  currency       String              @default("INR")
+  paymentStatus  RewardPaymentStatus @default(PENDING)
+  scheduledDate  DateTime?
+  paidAt         DateTime?
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
+
+  @@index([nominationId])
+  @@index([employeeId])
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CORE: BENEFICIARIES
+// ══════════════════════════════════════════════════════════════════
+
+model Beneficiary {
+  id                  String                @id @default(cuid())
+  employeeId          String
+  employee            Employee              @relation(fields: [employeeId], references: [id])
+  beneficiaryTypeId   String
+  beneficiaryType     BeneficiaryTypeMaster @relation(fields: [beneficiaryTypeId], references: [id])
+  fullName            String
+  relationship        String
+  contactDetails      String?
+  allocationPct       Float
+  status              BeneficiaryStatus     @default(PENDING)
+  verifiedBy          String?
+  verifiedAt          DateTime?
+  rejectionReason     String?
+  documents           BeneficiaryDocument[]
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+
+  @@index([employeeId])
+}
+
+model BeneficiaryDocument {
+  id              String      @id @default(cuid())
+  beneficiaryId   String
+  beneficiary     Beneficiary @relation(fields: [beneficiaryId], references: [id], onDelete: Cascade)
+  docName         String
+  fileRef         String
+  uploadedAt      DateTime    @default(now())
+
+  @@index([beneficiaryId])
+}
+
+// ══════════════════════════════════════════════════════════════════
+// CORE: AUDIT LOG
+// ══════════════════════════════════════════════════════════════════
+
+model AuditLog {
+  id           String    @id @default(cuid())
+  actorId      String?
+  actor        Employee? @relation(fields: [actorId], references: [id])
+  module       String
+  entity       String
+  entityId     String?
+  action       String
+  oldValue     Json?
+  newValue     Json?
+  changeReason String?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime  @default(now())
+
+  @@index([actorId])
+  @@index([module])
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
