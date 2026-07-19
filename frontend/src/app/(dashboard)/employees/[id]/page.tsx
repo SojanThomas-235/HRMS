@@ -297,7 +297,13 @@ function ExpTab({ id, emp, canWrite }: { id: string; emp: EmployeeDetail; canWri
   const isCurrent = watch("isCurrent");
 
   const onSubmit = (v: z.infer<typeof expSchema>) => {
-    addMut.mutate(v as Parameters<typeof addMut.mutate>[0], { onSuccess: () => { reset(); setOpen(false); } });
+    // Strip endDate when isCurrent is true, or when left blank —
+    // the backend validates z.string().date() which rejects empty strings.
+    const payload: Parameters<typeof addMut.mutate>[0] = {
+      ...v,
+      endDate: v.isCurrent || !v.endDate ? undefined : v.endDate,
+    };
+    addMut.mutate(payload, { onSuccess: () => { reset(); setOpen(false); } });
   };
 
   return (
@@ -484,7 +490,12 @@ function CertTab({ id, emp, canWrite }: { id: string; emp: EmployeeDetail; canWr
   });
 
   const onSubmit = (v: z.infer<typeof certSchema>) => {
-    addMut.mutate(v as Parameters<typeof addMut.mutate>[0], { onSuccess: () => { reset(); setOpen(false); } });
+    // Strip empty expiryDate — backend validates z.string().date() which rejects ""
+    const payload: Parameters<typeof addMut.mutate>[0] = {
+      ...v,
+      expiryDate: v.expiryDate || undefined,
+    };
+    addMut.mutate(payload, { onSuccess: () => { reset(); setOpen(false); } });
   };
 
   return (
