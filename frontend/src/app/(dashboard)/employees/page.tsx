@@ -1,15 +1,15 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
-  UserPlus, Search, Filter, X, Users,
+  UserPlus, Search, Filter, X, Users, SlidersHorizontal,
   ArrowRight, Pencil, Trash2, Mail, Phone,
   Calendar, Building2, Briefcase, TrendingUp, UserCircle,
 } from "lucide-react";
 import {
-  Button, Input, Select, Badge, Breadcrumb, Pagination,
-  Avatar, EmptyState, SkeletonTable, Modal, SidePanel, Tooltip,
+  Button, Badge, Breadcrumb, Pagination,
+  Avatar, EmptyState, SkeletonTable, Modal, SidePanel, Tooltip, BackButton,
 } from "@/components/ui";
 import { Can } from "@/components/auth";
 import { useEmployees, useDeleteEmployee, type EmployeeListItem } from "@/hooks/employee/useEmployees";
@@ -298,16 +298,21 @@ export default function EmployeesPage() {
   const [preview,      setPreview]      = useState<EmployeeListItem | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<EmployeeListItem | null>(null);
 
+  // Toolbar UI state
+  const [searchHovered, setSearchHovered] = useState(false);
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [filterOpen,    setFilterOpen]    = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const searchOpen   = searchHovered || searchFocused || !!search;
+  const filterActive = !!deptId || !!status;
+  const resetFilters = () => { setDeptId(""); setStatus(""); setPage(1); };
+
   const scope = role === "MANAGER" ? "team" : undefined;
 
   const { data, isLoading } = useEmployees({ search, departmentId: deptId, status, page, limit: 15, scope });
   const { data: depts }     = useDepartments();
   const deleteMut           = useDeleteEmployee();
-
-  const deptOptions = [
-    { value: "", label: "All Departments" },
-    ...(depts?.map((d) => ({ value: d.id, label: d.name })) ?? []),
-  ];
 
   const clearFilters = useCallback(() => {
     setSearch(""); setDeptId(""); setStatus(""); setPage(1);
@@ -330,66 +335,186 @@ export default function EmployeesPage() {
   if (role === "EMPLOYEE") return null;
 
   return (
-    <div className="flex flex-col gap-6">
-      <Breadcrumb items={[{ label: role === "MANAGER" ? "My Team" : "Employees" }]} />
-
-      {/* Page header */}
+    <div className="flex flex-col gap-4">
+      {/* ── Breadcrumb row + Back button ── */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Users className="w-6 h-6 text-primary-600 dark:text-primary-400" />
-            {role === "MANAGER" ? "My Team" : "Employees"}
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
-            {role === "MANAGER"
-              ? "View and manage your direct reports"
-              : "Manage your workforce across all departments"}
-          </p>
-        </div>
-        <Can perform="employee:create">
-          <Button
-            leftIcon={<UserPlus className="w-4 h-4" />}
-            onClick={() => router.push("/employees/new")}
-          >
-            Add Employee
-          </Button>
-        </Can>
+        <Breadcrumb items={[{ label: role === "MANAGER" ? "My Team" : "Employees" }]} />
+        <BackButton href="/dashboard" label="Dashboard" />
       </div>
 
-      {/* Filters */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-4">
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1">
-            <Input
-              placeholder="Search by name, code, or email…"
-              value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              leftAddon={<Search className="w-4 h-4 text-gray-400" />}
-            />
-          </div>
-          {role !== "MANAGER" && (
-            <div className="w-full sm:w-52">
-              <Select
-                value={deptId}
-                onChange={(e) => { setDeptId(e.target.value); setPage(1); }}
-                options={deptOptions}
-              />
+      {/* ── Title toolbar card ── */}
+      {(() => {
+        const btnBase = "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-150 active:scale-95 shrink-0";
+        const btnIdle = cn(btnBase, "text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700");
+        const btnLit  = cn(btnBase, "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400");
+        const btnAdd  = cn(btnBase, "bg-primary-600 hover:bg-primary-700 text-white shadow-sm shadow-primary-600/20");
+
+        const deptFilterOptions = [
+          { value: "", label: "All" },
+          ...(depts?.map((d) => ({ value: d.id, label: d.name })) ?? []),
+        ];
+        const statusFilterOptions = [
+          { value: "", label: "All" },
+          { value: "ACTIVE",    label: "Active" },
+          { value: "ON_NOTICE", label: "On Notice" },
+          { value: "EXITED",    label: "Exited" },
+        ];
+
+        return (
+          <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-5 pt-4 pb-3.5">
+            {/* Title + controls on same line */}
+            <div className="flex items-center justify-between gap-4">
+              {/* Left: icon + title + desc */}
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 rounded-xl bg-primary-50 dark:bg-primary-900/30 shrink-0">
+                  <Users className="w-4 h-4 text-primary-600 dark:text-primary-400" />
+                </div>
+                <div className="min-w-0">
+                  <h1 className="text-base font-semibold text-gray-900 dark:text-white leading-tight">
+                    {role === "MANAGER" ? "My Team" : "Employees"}
+                  </h1>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+                    {role === "MANAGER" ? "Your direct reports" : "Workforce across all departments"}
+                    {data?.total != null && (
+                      <span className="ml-1.5 px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 text-[10px] font-semibold tabular-nums">
+                        {data.total}
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
+
+              {/* Right: search + filter + add */}
+              <div className="flex items-center gap-2 shrink-0">
+                {/* Search — hover to expand */}
+                <div
+                  className="flex items-center gap-2"
+                  onMouseEnter={() => setSearchHovered(true)}
+                  onMouseLeave={() => setSearchHovered(false)}
+                >
+                  <div className={cn(
+                    "flex items-center overflow-hidden transition-all duration-200",
+                    searchOpen ? "w-60 opacity-100" : "w-0 opacity-0 pointer-events-none",
+                  )}>
+                    <div className="flex items-center gap-1.5 w-full border border-gray-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 px-3 py-1.5 shadow-sm">
+                      <Search className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" />
+                      <input
+                        ref={searchInputRef}
+                        value={search}
+                        onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                        onFocus={() => setSearchFocused(true)}
+                        onBlur={() => setSearchFocused(false)}
+                        placeholder="Search name, code, email…"
+                        className="flex-1 text-sm bg-transparent outline-none text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 min-w-0"
+                      />
+                      {search && (
+                        <button
+                          onMouseDown={(e) => { e.preventDefault(); setSearch(""); setPage(1); }}
+                          className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className={searchOpen ? btnLit : btnIdle}>
+                    <Search className="w-4 h-4" />
+                  </div>
+                </div>
+
+                {/* Filter toggle */}
+                <Tooltip label={filterOpen ? "Close filters" : "Filter"}>
+                  <button
+                    onClick={() => setFilterOpen((v) => !v)}
+                    className={cn(filterOpen || filterActive ? btnLit : btnIdle, "relative")}
+                  >
+                    <SlidersHorizontal className="w-4 h-4" />
+                    {filterActive && !filterOpen && (
+                      <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary-500" />
+                    )}
+                  </button>
+                </Tooltip>
+
+                {/* Add Employee */}
+                {canWrite && (
+                  <Tooltip label="Add employee">
+                    <button onClick={() => router.push("/employees/new")} className={btnAdd}>
+                      <UserPlus className="w-4 h-4" />
+                    </button>
+                  </Tooltip>
+                )}
+              </div>
             </div>
-          )}
-          <div className="w-full sm:w-44">
-            <Select
-              value={status}
-              onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-              options={STATUS_OPTIONS}
-            />
+
+            {/* Filter bar — slides down */}
+            <div className={cn(
+              "grid transition-all duration-200 ease-out",
+              filterOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+            )}>
+              <div className="overflow-hidden">
+                <div className="mt-3 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800/70 border border-gray-200 dark:border-slate-700">
+                  <div className="flex flex-wrap gap-x-8 gap-y-3 items-start">
+                    {/* Status pills */}
+                    <div className="flex items-center gap-3">
+                      <span className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider shrink-0">Status</span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {statusFilterOptions.map((opt) => (
+                          <button
+                            key={opt.value}
+                            onClick={() => { setStatus(opt.value); setPage(1); }}
+                            className={cn(
+                              "px-3 py-1 rounded-lg text-xs font-medium transition-all duration-150 border",
+                              status === opt.value
+                                ? "bg-primary-600 border-primary-600 text-white shadow-sm"
+                                : "bg-white dark:bg-slate-700/60 border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:border-primary-400 dark:hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400"
+                            )}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Department pills (non-manager only) */}
+                    {role !== "MANAGER" && depts && depts.length > 0 && (
+                      <div className="flex items-center gap-3">
+                        <span className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider shrink-0">Dept</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {deptFilterOptions.map((opt) => (
+                            <button
+                              key={opt.value}
+                              onClick={() => { setDeptId(opt.value); setPage(1); }}
+                              className={cn(
+                                "px-3 py-1 rounded-lg text-xs font-medium transition-all duration-150 border",
+                                deptId === opt.value
+                                  ? "bg-primary-600 border-primary-600 text-white shadow-sm"
+                                  : "bg-white dark:bg-slate-700/60 border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:border-primary-400 dark:hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400"
+                              )}
+                            >
+                              {opt.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Reset */}
+                    {filterActive && (
+                      <button
+                        onClick={resetFilters}
+                        className="ml-auto flex items-center gap-1 text-xs text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                      >
+                        <X className="w-3 h-3" />
+                        Reset
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          {hasFilters && (
-            <Button variant="ghost" size="sm" onClick={clearFilters} leftIcon={<X className="w-4 h-4" />}>
-              Clear
-            </Button>
-          )}
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Table card */}
       <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
@@ -419,34 +544,43 @@ export default function EmployeesPage() {
                         {h}
                       </th>
                     ))}
-                    <th className="px-4 py-3" />
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-slate-700/60">
                   {data.items.map((emp) => {
                     const isSelected = preview?.id === emp.id;
+                    const rowBtn = isSelected
+                      ? "p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/20 transition-all duration-150 active:scale-95"
+                      : "p-1.5 rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all duration-150 active:scale-95";
+                    const rowBtnDanger = isSelected
+                      ? "p-1.5 rounded-lg text-white/70 hover:text-red-200 hover:bg-red-500/30 transition-all duration-150 active:scale-95"
+                      : "p-1.5 rounded-lg text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-150 active:scale-95";
+
                     return (
                       <tr
                         key={emp.id}
-                        onClick={() => handleRowClick(emp)}
                         className={cn(
-                          "cursor-pointer transition-all duration-150 group",
+                          "transition-all duration-150",
                           isSelected
                             ? "bg-primary-600 dark:bg-primary-600 shadow-[inset_4px_0_0] shadow-primary-400"
                             : "hover:bg-gray-50/80 dark:hover:bg-slate-700/40"
                         )}
                       >
-                        {/* Employee name + email */}
+                        {/* Employee name + email — name is a clickable link */}
                         <td className="px-4 py-3.5">
                           <div className="flex items-center gap-3">
                             <Avatar name={emp.fullName} size="sm" />
                             <div>
-                              <p className={cn(
-                                "font-semibold leading-tight",
-                                isSelected ? "text-white" : "text-gray-900 dark:text-white"
-                              )}>
+                              <button
+                                onClick={() => handleRowClick(emp)}
+                                className={cn(
+                                  "font-semibold leading-tight text-left hover:underline underline-offset-2 transition-colors cursor-pointer",
+                                  isSelected ? "text-white" : "text-primary-600 dark:text-primary-400 hover:text-primary-700 dark:hover:text-primary-300"
+                                )}
+                              >
                                 {emp.fullName}
-                              </p>
+                              </button>
                               <p className={cn(
                                 "text-xs mt-0.5",
                                 isSelected ? "text-primary-100" : "text-gray-400 dark:text-slate-500"
@@ -514,13 +648,37 @@ export default function EmployeesPage() {
                           )}
                         </td>
 
-                        {/* Row indicator */}
-                        <td className="px-4 py-3.5 w-10">
-                          <div className={cn(
-                            "flex items-center justify-end transition-opacity duration-150",
-                            isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                          )}>
-                            <ArrowRight className={cn("w-4 h-4", isSelected ? "text-white" : "text-gray-400")} />
+                        {/* Action buttons */}
+                        <td className="px-4 py-3.5">
+                          <div className="flex items-center justify-end gap-0.5">
+                            <Tooltip label="View profile" side="left">
+                              <button
+                                onClick={() => router.push(`/employees/${emp.id}`)}
+                                className={rowBtn}
+                              >
+                                <ArrowRight className="w-3.5 h-3.5" />
+                              </button>
+                            </Tooltip>
+                            {canWrite && (
+                              <Tooltip label="Edit employee" side="left">
+                                <button
+                                  onClick={() => router.push(`/employees/${emp.id}/edit`)}
+                                  className={rowBtn}
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
+                              </Tooltip>
+                            )}
+                            {canDelete && (
+                              <Tooltip label="Delete employee" side="left">
+                                <button
+                                  onClick={() => { setPreview(null); setDeleteTarget(emp); }}
+                                  className={rowBtnDanger}
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </Tooltip>
+                            )}
                           </div>
                         </td>
                       </tr>

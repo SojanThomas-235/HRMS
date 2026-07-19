@@ -46,7 +46,7 @@ function errMsg(e: unknown, fallback: string) {
 }
 
 function ActiveBadge({ active }: { active: boolean }) {
-  return <Badge variant={active ? "success" : "secondary"}>{active ? "Active" : "Inactive"}</Badge>;
+  return <Badge variant={active ? "success" : "danger"} dot>{active ? "Active" : "Inactive"}</Badge>;
 }
 
 // ── Sortable table header ─────────────────────────────────────────────────────
@@ -118,149 +118,141 @@ function TabToolbar({
   searchValue: string; onSearchChange: (q: string) => void;
   filterGroups?: FilterGroup[];
 }) {
-  const [hovered,  setHovered]  = useState(false);
-  const [focused,  setFocused]  = useState(false);
+  const [hovered,    setHovered]    = useState(false);
+  const [focused,    setFocused]    = useState(false);
   const [filterOpen, setFilterOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Input slides out on hover OR focus OR if value is present
-  const searchOpen = hovered || focused || !!searchValue;
-
-  // Dot indicator: any filter group is not on its default "all" value
+  const searchOpen   = hovered || focused || !!searchValue;
   const filterActive = filterGroups.some((g) => g.value !== g.options[0]?.value);
+  const resetFilters = () => filterGroups.forEach((g) => g.onChange(g.options[0]?.value ?? "all"));
 
-  const btnBase   = "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-150 active:scale-95 shrink-0";
-  const btnIdle   = cn(btnBase, "text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700");
-  const btnLit    = cn(btnBase, "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400");
-  const btnAdd    = cn(btnBase, "bg-primary-600 hover:bg-primary-700 text-white shadow-sm shadow-primary-600/20");
+  const btnBase = "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-150 active:scale-95 shrink-0";
+  const btnIdle = cn(btnBase, "text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700");
+  const btnLit  = cn(btnBase, "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400");
+  const btnAdd  = cn(btnBase, "bg-primary-600 hover:bg-primary-700 text-white shadow-sm shadow-primary-600/20");
 
   return (
-    <div className="flex items-center justify-between mb-4 gap-4">
-      {/* Left */}
-      <div className="min-w-0">
-        <h2 className="text-base font-semibold text-gray-900 dark:text-white truncate">{title}</h2>
-        <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">{desc}</p>
-      </div>
+    <div className="mb-4">
+      {/* ── Main toolbar row ── */}
+      <div className="flex items-center justify-between gap-4">
+        {/* Left: title + desc */}
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold text-gray-900 dark:text-white truncate">{title}</h2>
+          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">{desc}</p>
+        </div>
 
-      {/* Right controls — all on one line */}
-      <div className="flex items-center gap-2 shrink-0">
+        {/* Right: icon buttons */}
+        <div className="flex items-center gap-2 shrink-0">
 
-        {/* Search: hover wrapper covers both icon + expanding input */}
-        <div
-          className="flex items-center gap-2"
-          onMouseEnter={() => setHovered(true)}
-          onMouseLeave={() => setHovered(false)}
-        >
-          {/* Expanding input */}
-          <div className={cn(
-            "flex items-center overflow-hidden transition-all duration-200",
-            searchOpen ? "w-52 opacity-100" : "w-0 opacity-0 pointer-events-none",
-          )}>
-            <div className="flex items-center gap-1.5 w-full border border-gray-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 px-3 py-1.5 shadow-sm">
-              <Search className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" />
-              <input
-                ref={inputRef}
-                value={searchValue}
-                onChange={(e) => onSearchChange(e.target.value)}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                placeholder="Search…"
-                className="flex-1 text-sm bg-transparent outline-none text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 min-w-0"
-              />
-              {searchValue && (
-                <button
-                  onMouseDown={(e) => { e.preventDefault(); onSearchChange(""); }}
-                  className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
+          {/* Search — hover to expand */}
+          <div
+            className="flex items-center gap-2"
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+          >
+            <div className={cn(
+              "flex items-center overflow-hidden transition-all duration-200",
+              searchOpen ? "w-52 opacity-100" : "w-0 opacity-0 pointer-events-none",
+            )}>
+              <div className="flex items-center gap-1.5 w-full border border-gray-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 px-3 py-1.5 shadow-sm">
+                <Search className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" />
+                <input
+                  ref={inputRef}
+                  value={searchValue}
+                  onChange={(e) => onSearchChange(e.target.value)}
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
+                  placeholder="Search…"
+                  className="flex-1 text-sm bg-transparent outline-none text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 min-w-0"
+                />
+                {searchValue && (
+                  <button
+                    onMouseDown={(e) => { e.preventDefault(); onSearchChange(""); }}
+                    className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </div>
+            {/* Search icon (non-interactive — hover on parent does the work) */}
+            <div className={searchOpen ? btnLit : btnIdle}>
+              <Search className="w-4 h-4" />
             </div>
           </div>
 
-          {/* Search icon — visual indicator, hover area is the parent wrapper */}
-          <div className={searchOpen ? btnLit : btnIdle}>
-            <Search className="w-4 h-4" />
-          </div>
-        </div>
-
-        {/* Filter button + multi-group dropdown */}
-        {filterGroups.length > 0 && (
-          <div className="relative">
-            <Tooltip label="Filter">
+          {/* Filter toggle */}
+          {filterGroups.length > 0 && (
+            <Tooltip label={filterOpen ? "Close filters" : "Filter"}>
               <button
                 onClick={() => setFilterOpen((v) => !v)}
                 className={cn(filterOpen || filterActive ? btnLit : btnIdle, "relative")}
               >
                 <SlidersHorizontal className="w-4 h-4" />
-                {filterActive && (
+                {filterActive && !filterOpen && (
                   <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary-500" />
                 )}
               </button>
             </Tooltip>
+          )}
 
-            {filterOpen && (
-              <>
-                <div className="fixed inset-0 z-10" onClick={() => setFilterOpen(false)} />
-                <div className="absolute right-0 top-full mt-1.5 z-20 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-xl overflow-hidden min-w-[180px]">
-                  {filterGroups.map((group, gi) => (
-                    <div key={gi} className={cn("p-3", gi > 0 && "border-t border-gray-100 dark:border-slate-700")}>
-                      <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">
-                        {group.label}
-                      </p>
-                      <div className="flex flex-col gap-0.5">
-                        {group.options.map((opt) => (
-                          <button
-                            key={opt.value}
-                            onClick={() => group.onChange(opt.value)}
-                            className={cn(
-                              "w-full text-left px-3 py-1.5 text-sm rounded-lg transition-colors flex items-center gap-2",
-                              group.value === opt.value
-                                ? "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400 font-medium"
-                                : "text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50"
-                            )}
-                          >
-                            {/* Radio dot */}
-                            <span className={cn(
-                              "w-3.5 h-3.5 rounded-full border-2 shrink-0 flex items-center justify-center",
-                              group.value === opt.value
-                                ? "border-primary-500 bg-primary-500"
-                                : "border-gray-300 dark:border-slate-600"
-                            )}>
-                              {group.value === opt.value && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                              )}
-                            </span>
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
+          {/* Add */}
+          <Tooltip label={addLabel ?? `Add ${title.toLowerCase()}`}>
+            <button onClick={onAdd} className={btnAdd}>
+              <Plus className="w-4 h-4" />
+            </button>
+          </Tooltip>
+        </div>
+      </div>
 
-                  {/* Reset all */}
-                  {filterActive && (
-                    <div className="px-3 pb-3 border-t border-gray-100 dark:border-slate-700 pt-2">
+      {/* ── Filter bar — slides down below toolbar ── */}
+      <div className={cn(
+        "grid transition-all duration-200 ease-out",
+        filterOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+      )}>
+        <div className="overflow-hidden">
+          <div className="mt-3 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800/70 border border-gray-200 dark:border-slate-700">
+            <div className="flex flex-wrap gap-x-8 gap-y-3 items-start">
+              {filterGroups.map((group) => (
+                <div key={group.label} className="flex items-center gap-3">
+                  {/* Label */}
+                  <span className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider shrink-0">
+                    {group.label}
+                  </span>
+                  {/* Pill buttons */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {group.options.map((opt) => (
                       <button
-                        onClick={() => { filterGroups.forEach((g) => g.onChange(g.options[0]?.value ?? "all")); }}
-                        className="w-full text-center text-xs text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors py-1"
+                        key={opt.value}
+                        onClick={() => group.onChange(opt.value)}
+                        className={cn(
+                          "px-3 py-1 rounded-lg text-xs font-medium transition-all duration-150 border",
+                          group.value === opt.value
+                            ? "bg-primary-600 border-primary-600 text-white shadow-sm"
+                            : "bg-white dark:bg-slate-700/60 border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:border-primary-400 dark:hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400"
+                        )}
                       >
-                        Reset all filters
+                        {opt.label}
                       </button>
-                    </div>
-                  )}
+                    ))}
+                  </div>
                 </div>
-              </>
-            )}
-          </div>
-        )}
+              ))}
 
-        {/* Add */}
-        <Tooltip label={addLabel ?? `Add ${title.toLowerCase()}`}>
-          <button onClick={onAdd} className={btnAdd}>
-            <Plus className="w-4 h-4" />
-          </button>
-        </Tooltip>
+              {/* Reset — only when something is active */}
+              {filterActive && (
+                <button
+                  onClick={resetFilters}
+                  className="ml-auto flex items-center gap-1 text-xs text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -1339,7 +1331,7 @@ export default function SettingsPage() {
               <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Manage master data — departments, skills, qualifications, and BPV scoring rules</p>
             </div>
           </div>
-          <BackButton href="/dashboard" label="Back to Dashboard" />
+          <BackButton href="/dashboard" label="Back" />
         </div>
 
         <Tabs tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
