@@ -51,18 +51,22 @@ router.get("/:id/bpv", selfOrHrAdmin, ctrl.bpvHistory);
 // ── Qualifications ─────────────────────────────────────────────────────────────
 // EMPLOYEE can manage their OWN; HR_ADMIN / SYSTEM_ADMIN can manage anyone's
 router.post  ("/:id/qualifications",         selfOrHrAdmin, validate(addQualificationSchema), ctrl.addQual);
+router.put   ("/:id/qualifications/:qualId", selfOrHrAdmin, ctrl.updateQual);
 router.delete("/:id/qualifications/:qualId", selfOrHrAdmin, ctrl.removeQual);
 
 // ── Experience ─────────────────────────────────────────────────────────────────
 router.post  ("/:id/experience",        selfOrHrAdmin, validate(addExperienceSchema), ctrl.addExp);
+router.put   ("/:id/experience/:expId", selfOrHrAdmin, ctrl.updateExp);
 router.delete("/:id/experience/:expId", selfOrHrAdmin, ctrl.removeExp);
 
 // ── Skills ─────────────────────────────────────────────────────────────────────
-router.post  ("/:id/skills",           selfOrHrAdmin, validate(addSkillSchema), ctrl.addSkill);
-router.delete("/:id/skills/:skillId",  selfOrHrAdmin, ctrl.removeSkill);
+router.post  ("/:id/skills",            selfOrHrAdmin, validate(addSkillSchema), ctrl.addSkill);
+router.put   ("/:id/skills/:skillId",   selfOrHrAdmin, ctrl.updateSkill);
+router.delete("/:id/skills/:skillId",   selfOrHrAdmin, ctrl.removeSkill);
 
 // ── Certifications ─────────────────────────────────────────────────────────────
 router.post  ("/:id/certifications",          selfOrHrAdmin, validate(addCertificationSchema), ctrl.addCert);
+router.put   ("/:id/certifications/:certId",  selfOrHrAdmin, ctrl.updateCert);
 router.delete("/:id/certifications/:certId",  selfOrHrAdmin, ctrl.removeCert);
 
 export default router;

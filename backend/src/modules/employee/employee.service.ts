@@ -8,6 +8,12 @@ import type {
   AddSkillInput, AddCertificationInput,
 } from "@hrms/validators";
 
+// ── Partial update input types (inline — no new validator package needed) ───────
+type UpdateQualInput   = { institution?: string; yearOfCompletion?: number; grade?: string };
+type UpdateExpInput    = Partial<AddExperienceInput>;
+type UpdateSkillInput  = { proficiencyLevelId?: string; yearsOfExperience?: number };
+type UpdateCertInput   = { issueDate?: string; expiryDate?: string | null };
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 async function nextEmployeeCode(): Promise<string> {
@@ -270,6 +276,17 @@ export async function addQualification(
   return qual;
 }
 
+export async function updateQualification(employeeId: string, qualId: string, data: UpdateQualInput, actorId: string | undefined) {
+  await ensureEmployeeExists(employeeId);
+  const qual = await prisma.employeeQualification.update({
+    where: { id: qualId, employeeId },
+    data: { institution: data.institution, yearOfCompletion: data.yearOfCompletion, grade: data.grade },
+    include: { qualificationType: true },
+  });
+  await calculateBpv(employeeId, actorId, "QUALIFICATION_UPDATED");
+  return qual;
+}
+
 export async function deleteQualification(employeeId: string, qualId: string, actorId: string | undefined) {
   await ensureEmployeeExists(employeeId);
   await prisma.employeeQualification.deleteMany({ where: { id: qualId, employeeId } });
@@ -313,6 +330,37 @@ export async function addExperience(
   return exp;
 }
 
+export async function updateExperience(employeeId: string, expId: string, data: UpdateExpInput, actorId: string | undefined) {
+  await ensureEmployeeExists(employeeId);
+  const startDate   = data.startDate ? new Date(data.startDate) : undefined;
+  const endDate     = data.isCurrent ? null : data.endDate ? new Date(data.endDate) : undefined;
+  const yearsCalc   = startDate ? calcYears(startDate, endDate ?? null) : undefined;
+
+  const exp = await prisma.$transaction(async (tx) => {
+    if (data.experienceTypes?.length) {
+      await tx.employeeExperienceType.deleteMany({ where: { experienceId: expId } });
+    }
+    return tx.employeeExperience.update({
+      where: { id: expId, employeeId },
+      data: {
+        ...(data.organizationName   && { organizationName:   data.organizationName }),
+        ...(data.organizationTypeId && { organizationTypeId: data.organizationTypeId }),
+        ...(data.designationHeld    && { designationHeld:    data.designationHeld }),
+        ...(startDate               && { startDate }),
+        ...(endDate  !== undefined  && { endDate }),
+        ...(data.isCurrent !== undefined && { isCurrent: data.isCurrent }),
+        ...(yearsCalc !== undefined && { yearsCalculated: yearsCalc }),
+        ...(data.experienceTypes?.length && {
+          experienceTypes: { create: data.experienceTypes.map((tid) => ({ experienceTypeId: tid })) },
+        }),
+      },
+      include: { organizationType: true, experienceTypes: { include: { experienceType: true } } },
+    });
+  });
+  await calculateBpv(employeeId, actorId, "EXPERIENCE_UPDATED");
+  return exp;
+}
+
 export async function deleteExperience(employeeId: string, expId: string, actorId: string | undefined) {
   await ensureEmployeeExists(employeeId);
   await prisma.employeeExperience.deleteMany({ where: { id: expId, employeeId } });
@@ -347,6 +395,17 @@ export async function addSkill(
   return skill;
 }
 
+export async function updateSkill(employeeId: string, skillId: string, data: UpdateSkillInput, actorId: string | undefined) {
+  await ensureEmployeeExists(employeeId);
+  const skill = await prisma.employeeSkill.update({
+    where: { id: skillId, employeeId },
+    data: { proficiencyLevelId: data.proficiencyLevelId, yearsOfExperience: data.yearsOfExperience },
+    include: { skill: { include: { category: true } }, proficiencyLevel: true },
+  });
+  await calculateBpv(employeeId, actorId, "SKILL_UPDATED");
+  return skill;
+}
+
 export async function deleteSkill(employeeId: string, skillId: string, actorId: string | undefined) {
   await ensureEmployeeExists(employeeId);
   await prisma.employeeSkill.deleteMany({ where: { id: skillId, employeeId } });
@@ -374,6 +433,21 @@ export async function addCertification(
   });
 
   await calculateBpv(employeeId, actorId, "CERTIFICATION_ADDED");
+  return cert;
+}
+
+export async function updateCertification(employeeId: string, certId: string, data: UpdateCertInput, actorId: string | undefined) {
+  await ensureEmployeeExists(employeeId);
+  const expiryDate = data.expiryDate ? new Date(data.expiryDate) : data.expiryDate === null ? null : undefined;
+  const cert = await prisma.employeeCertification.update({
+    where: { id: certId, employeeId },
+    data: {
+      ...(data.issueDate && { issueDate: new Date(data.issueDate) }),
+      ...(expiryDate !== undefined && { expiryDate, isExpired: expiryDate ? expiryDate < new Date() : false }),
+    },
+    include: { certification: true },
+  });
+  await calculateBpv(employeeId, actorId, "CERTIFICATION_UPDATED");
   return cert;
 }
 

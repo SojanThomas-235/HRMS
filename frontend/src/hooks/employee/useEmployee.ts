@@ -88,6 +88,35 @@ export function useAddCertification(employeeId: string) {
   return makeSubMutation<AddCertificationInput>(employeeId, "certifications", qc, "Certification added");
 }
 
+function makeUpdateMutation<T>(employeeId: string, subPath: string, qc: ReturnType<typeof useQueryClient>, successMsg: string) {
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: T }) =>
+      api.put(`/employees/${employeeId}/${subPath}/${id}`, data).then((r) => (r as { data: { data: unknown } }).data.data),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["employee", employeeId] });
+      toast.success(successMsg);
+    },
+    onError: () => toast.error(`Failed to update`),
+  });
+}
+
+export function useUpdateQualification(employeeId: string) {
+  const qc = useQueryClient();
+  return makeUpdateMutation<{ institution?: string; yearOfCompletion?: number; grade?: string }>(employeeId, "qualifications", qc, "Qualification updated");
+}
+export function useUpdateExperience(employeeId: string) {
+  const qc = useQueryClient();
+  return makeUpdateMutation<Partial<AddExperienceInput>>(employeeId, "experience", qc, "Experience updated");
+}
+export function useUpdateSkill(employeeId: string) {
+  const qc = useQueryClient();
+  return makeUpdateMutation<{ proficiencyLevelId?: string; yearsOfExperience?: number }>(employeeId, "skills", qc, "Skill updated");
+}
+export function useUpdateCertification(employeeId: string) {
+  const qc = useQueryClient();
+  return makeUpdateMutation<{ issueDate?: string; expiryDate?: string | null }>(employeeId, "certifications", qc, "Certification updated");
+}
+
 function makeDeleteMutation(employeeId: string, subPath: string, qc: ReturnType<typeof useQueryClient>) {
   return useMutation({
     mutationFn: (subId: string) => api.delete(`/employees/${employeeId}/${subPath}/${subId}`),
