@@ -1,24 +1,23 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Pencil, GraduationCap, Briefcase, Star, Award, TrendingUp,
-  Plus, Trash2, Mail, Phone, CalendarDays, User,
+  Plus, Trash2, Mail, Phone, CalendarDays, User, Search, X,
 } from "lucide-react";
 import {
   Button, Badge, Breadcrumb, BackButton, Avatar, Tabs, Card, CardHeader, CardTitle,
   CardDivider, EmptyState, Modal, FormField, Input, Select, SkeletonCard, Tooltip,
 } from "@/components/ui";
-
-const iconBtnDanger = "p-2 rounded-xl text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-150 active:scale-95";
+import { cn } from "@/lib/utils";
 import {
   useEmployee, useBpvHistory,
-  useAddQualification, useDeleteQualification,
-  useAddExperience, useDeleteExperience,
-  useAddSkill, useDeleteSkill,
-  useAddCertification, useDeleteCertification,
-  type EmployeeDetail,
+  useAddQualification, useDeleteQualification, useUpdateQualification,
+  useAddExperience, useDeleteExperience, useUpdateExperience,
+  useAddSkill, useDeleteSkill, useUpdateSkill,
+  useAddCertification, useDeleteCertification, useUpdateCertification,
+  type EmployeeDetail, type Qualification, type Experience, type Skill, type Certification,
 } from "@/hooks/employee/useEmployee";
 import {
   useQualTypes, useProficiencyLevels, useSkills,
@@ -29,8 +28,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { usePermissions } from "@/hooks/usePermissions";
 
+const iconBtn = "p-2 rounded-xl text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all duration-150 active:scale-95";
+const iconBtnDanger = "p-2 rounded-xl text-gray-400 dark:text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-150 active:scale-95";
+
 const statusVariant = (s: string) =>
   s === "ACTIVE" ? "success" : s === "ON_NOTICE" ? "warning" : "danger";
+
+function toInputDate(d?: string | null) {
+  if (!d) return "";
+  return new Date(d).toISOString().split("T")[0];
+}
 
 export default function EmployeeDetailPage() {
   const params = useParams<{ id: string }>();
@@ -41,7 +48,6 @@ export default function EmployeeDetailPage() {
   const { data: emp, isLoading } = useEmployee(id);
   const [activeTab, setActiveTab] = useState("overview");
 
-  // EMPLOYEE accessing someone else's profile → redirect to own
   useEffect(() => {
     if (role === "EMPLOYEE" && !isSelf(id)) {
       router.replace(`/employees/${id}`);
@@ -57,7 +63,6 @@ export default function EmployeeDetailPage() {
     />
   );
 
-  // Determine write permissions
   const canEditProfile = can("employee:edit");
   const canManageSubs  = can("employee:sub:manage") || (can("employee:sub:self") && isSelf(id));
 
@@ -72,7 +77,6 @@ export default function EmployeeDetailPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      {/* Top bar: breadcrumb left, back button right */}
       <div className="flex items-center justify-between">
         <Breadcrumb items={[
           { label: "Employees", href: "/employees" },
@@ -103,7 +107,7 @@ export default function EmployeeDetailPage() {
             <Tooltip label="Edit employee profile">
               <button
                 onClick={() => router.push(`/employees/${id}/edit`)}
-                className="p-2 rounded-xl text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 transition-all duration-150 active:scale-95"
+                className={iconBtn}
               >
                 <Pencil className="w-4 h-4" />
               </button>
@@ -123,10 +127,8 @@ export default function EmployeeDetailPage() {
         </div>
       </div>
 
-      {/* Tabs */}
       <Tabs tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Tab content */}
       {activeTab === "overview"       && <OverviewTab emp={emp} />}
       {activeTab === "qualifications" && <QualTab  id={id} emp={emp} canWrite={canManageSubs} />}
       {activeTab === "experience"     && <ExpTab   id={id} emp={emp} canWrite={canManageSubs} />}
@@ -186,28 +188,65 @@ const qualSchema = z.object({
   yearOfCompletion:    z.coerce.number().min(1950).max(new Date().getFullYear()),
   grade:               z.string().optional(),
 });
+const qualEditSchema = z.object({
+  institution:      z.string().min(2, "Required"),
+  yearOfCompletion: z.coerce.number().min(1950).max(new Date().getFullYear()),
+  grade:            z.string().optional(),
+});
 
 function QualTab({ id, emp, canWrite }: { id: string; emp: EmployeeDetail; canWrite: boolean }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen]       = useState(false);
+  const [editing, setEditing] = useState<Qualification | null>(null);
+  const [search, setSearch]   = useState("");
+  const keepOpenRef           = useRef(false);
+
   const addMut  = useAddQualification(id);
+  const updMut  = useUpdateQualification(id);
   const delMut  = useDeleteQualification(id);
   const { data: types } = useQualTypes();
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<z.infer<typeof qualSchema>>({
-    resolver: zodResolver(qualSchema),
-  });
+  const addForm = useForm<z.infer<typeof qualSchema>>({ resolver: zodResolver(qualSchema) });
+  const editForm = useForm<z.infer<typeof qualEditSchema>>({ resolver: zodResolver(qualEditSchema) });
 
-  const onSubmit = (v: z.infer<typeof qualSchema>) => {
-    addMut.mutate(v as Parameters<typeof addMut.mutate>[0], { onSuccess: () => { reset(); setOpen(false); } });
+  const onAdd = (v: z.infer<typeof qualSchema>) => {
+    addMut.mutate(v as Parameters<typeof addMut.mutate>[0], {
+      onSuccess: () => {
+        addForm.reset();
+        if (!keepOpenRef.current) setOpen(false);
+        keepOpenRef.current = false;
+      },
+    });
   };
+
+  const onEdit = (v: z.infer<typeof qualEditSchema>) => {
+    if (!editing) return;
+    updMut.mutate({ id: editing.id, data: v }, { onSuccess: () => setEditing(null) });
+  };
+
+  useEffect(() => {
+    if (editing) {
+      editForm.reset({
+        institution:      editing.institution,
+        yearOfCompletion: editing.yearOfCompletion,
+        grade:            editing.grade ?? "",
+      });
+    }
+  }, [editing, editForm]);
+
+  const q = search
+    ? emp.qualifications.filter((q) =>
+        q.institution.toLowerCase().includes(search.toLowerCase()) ||
+        q.qualificationType.name.toLowerCase().includes(search.toLowerCase()))
+    : emp.qualifications;
 
   return (
     <SubCard
       title="Qualifications" icon={<GraduationCap className="w-4 h-4" />}
       onAdd={canWrite ? () => setOpen(true) : undefined}
+      search={search} onSearch={setSearch}
     >
-      {emp.qualifications.length === 0 ? (
-        <EmptyState title="No qualifications" description="Add the employee's educational background." />
+      {q.length === 0 ? (
+        <EmptyState title={search ? "No matches" : "No qualifications"} description={search ? "Try a different search." : "Add the employee's educational background."} />
       ) : (
         <table className="w-full text-sm">
           <thead>
@@ -216,24 +255,31 @@ function QualTab({ id, emp, canWrite }: { id: string; emp: EmployeeDetail; canWr
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50 dark:divide-slate-700/50">
-            {emp.qualifications.map((q) => (
-              <tr key={q.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
-                <Td>{q.qualificationType.name}</Td>
-                <Td>{q.institution}</Td>
-                <Td>{q.yearOfCompletion}</Td>
-                <Td>{q.grade ?? "—"}</Td>
+            {q.map((qual) => (
+              <tr key={qual.id} className="hover:bg-gray-50 dark:hover:bg-slate-700/30">
+                <Td>{qual.qualificationType.name}</Td>
+                <Td>{qual.institution}</Td>
+                <Td>{qual.yearOfCompletion}</Td>
+                <Td>{qual.grade ?? "—"}</Td>
                 <Td>
-                  <Badge variant={q.verificationStatus === "VERIFIED" ? "success" : "warning"}>
-                    {q.verificationStatus}
+                  <Badge variant={qual.verificationStatus === "VERIFIED" ? "success" : "warning"}>
+                    {qual.verificationStatus}
                   </Badge>
                 </Td>
                 <Td>
                   {canWrite && (
-                    <Tooltip label="Remove qualification" side="left">
-                      <button onClick={() => delMut.mutate(q.id)} className={iconBtnDanger}>
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </Tooltip>
+                    <div className="flex items-center gap-1 justify-end">
+                      <Tooltip label="Edit qualification" side="left">
+                        <button onClick={() => setEditing(qual)} className={iconBtn}>
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                      </Tooltip>
+                      <Tooltip label="Remove qualification" side="left">
+                        <button onClick={() => delMut.mutate(qual.id)} className={iconBtnDanger}>
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </Tooltip>
+                    </div>
                   )}
                 </Td>
               </tr>
@@ -242,28 +288,55 @@ function QualTab({ id, emp, canWrite }: { id: string; emp: EmployeeDetail; canWr
         </table>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Add Qualification" size="md">
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <FormField label="Qualification Type" required error={errors.qualificationTypeId?.message}>
-            <Select {...register("qualificationTypeId")} options={[
+      {/* Add modal */}
+      <Modal open={open} onClose={() => { setOpen(false); addForm.reset(); }} title="Add Qualification" size="md">
+        <form onSubmit={addForm.handleSubmit(onAdd)} className="flex flex-col gap-4">
+          <FormField label="Qualification Type" required error={addForm.formState.errors.qualificationTypeId?.message}>
+            <Select {...addForm.register("qualificationTypeId")} options={[
               { value: "", label: "Select type" },
               ...(types?.map((t) => ({ value: t.id, label: t.name })) ?? []),
             ]} />
           </FormField>
-          <FormField label="Institution" required error={errors.institution?.message}>
-            <Input {...register("institution")} placeholder="University / College name" />
+          <FormField label="Institution" required error={addForm.formState.errors.institution?.message}>
+            <Input {...addForm.register("institution")} placeholder="University / College name" />
           </FormField>
           <div className="grid grid-cols-2 gap-3">
-            <FormField label="Year of Completion" required error={errors.yearOfCompletion?.message}>
-              <Input {...register("yearOfCompletion")} type="number" placeholder="2020" />
+            <FormField label="Year of Completion" required error={addForm.formState.errors.yearOfCompletion?.message}>
+              <Input {...addForm.register("yearOfCompletion")} type="number" placeholder="2020" />
             </FormField>
-            <FormField label="Grade / CGPA" error={errors.grade?.message}>
-              <Input {...register("grade")} placeholder="e.g. First Class / 8.5" />
+            <FormField label="Grade / CGPA" error={addForm.formState.errors.grade?.message}>
+              <Input {...addForm.register("grade")} placeholder="e.g. First Class / 8.5" />
+            </FormField>
+          </div>
+          <div className="flex justify-between pt-2">
+            <Button variant="secondary" type="button" onClick={() => { keepOpenRef.current = true; addForm.handleSubmit(onAdd)(); }}>
+              Save &amp; Add Another
+            </Button>
+            <div className="flex gap-3">
+              <Button variant="secondary" type="button" onClick={() => { setOpen(false); addForm.reset(); }}>Cancel</Button>
+              <Button type="submit" loading={addMut.isPending}>Add</Button>
+            </div>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit modal */}
+      <Modal open={!!editing} onClose={() => setEditing(null)} title="Edit Qualification" size="md">
+        <form onSubmit={editForm.handleSubmit(onEdit)} className="flex flex-col gap-4">
+          <FormField label="Institution" required error={editForm.formState.errors.institution?.message}>
+            <Input {...editForm.register("institution")} placeholder="University / College name" />
+          </FormField>
+          <div className="grid grid-cols-2 gap-3">
+            <FormField label="Year of Completion" required error={editForm.formState.errors.yearOfCompletion?.message}>
+              <Input {...editForm.register("yearOfCompletion")} type="number" placeholder="2020" />
+            </FormField>
+            <FormField label="Grade / CGPA" error={editForm.formState.errors.grade?.message}>
+              <Input {...editForm.register("grade")} placeholder="e.g. First Class / 8.5" />
             </FormField>
           </div>
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="secondary" type="button" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="submit" loading={addMut.isPending}>Add</Button>
+            <Button variant="secondary" type="button" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button type="submit" loading={updMut.isPending}>Save Changes</Button>
           </div>
         </form>
       </Modal>
@@ -284,104 +357,128 @@ const expSchema = z.object({
 });
 
 function ExpTab({ id, emp, canWrite }: { id: string; emp: EmployeeDetail; canWrite: boolean }) {
-  const [open, setOpen] = useState(false);
-  const addMut  = useAddExperience(id);
-  const delMut  = useDeleteExperience(id);
+  const [open, setOpen]       = useState(false);
+  const [editing, setEditing] = useState<Experience | null>(null);
+  const [search, setSearch]   = useState("");
+  const keepOpenRef           = useRef(false);
+
+  const addMut = useAddExperience(id);
+  const updMut = useUpdateExperience(id);
+  const delMut = useDeleteExperience(id);
   const { data: orgTypes } = useOrgTypes();
-  const { data: expTypes } = useExpTypes();
+  const { data: expTypes }  = useExpTypes();
 
-  const { register, handleSubmit, reset, watch, formState: { errors } } = useForm<z.infer<typeof expSchema>>({
-    resolver: zodResolver(expSchema),
-    defaultValues: { isCurrent: false, experienceTypes: [] },
+  const addForm  = useForm<z.infer<typeof expSchema>>({ resolver: zodResolver(expSchema), defaultValues: { isCurrent: false, experienceTypes: [] } });
+  const editForm = useForm<z.infer<typeof expSchema>>({ resolver: zodResolver(expSchema), defaultValues: { isCurrent: false, experienceTypes: [] } });
+  const addIsCurrent  = addForm.watch("isCurrent");
+  const editIsCurrent = editForm.watch("isCurrent");
+
+  const buildPayload = (v: z.infer<typeof expSchema>) => ({
+    ...v,
+    endDate: v.isCurrent || !v.endDate ? undefined : v.endDate,
   });
-  const isCurrent = watch("isCurrent");
 
-  const onSubmit = (v: z.infer<typeof expSchema>) => {
-    // Strip endDate when isCurrent is true, or when left blank —
-    // the backend validates z.string().date() which rejects empty strings.
-    const payload: Parameters<typeof addMut.mutate>[0] = {
-      ...v,
-      endDate: v.isCurrent || !v.endDate ? undefined : v.endDate,
-    };
-    addMut.mutate(payload, { onSuccess: () => { reset(); setOpen(false); } });
+  const onAdd = (v: z.infer<typeof expSchema>) => {
+    addMut.mutate(buildPayload(v) as Parameters<typeof addMut.mutate>[0], {
+      onSuccess: () => {
+        addForm.reset({ isCurrent: false, experienceTypes: [] });
+        if (!keepOpenRef.current) setOpen(false);
+        keepOpenRef.current = false;
+      },
+    });
   };
 
+  const onEdit = (v: z.infer<typeof expSchema>) => {
+    if (!editing) return;
+    updMut.mutate({ id: editing.id, data: buildPayload(v) }, { onSuccess: () => setEditing(null) });
+  };
+
+  useEffect(() => {
+    if (editing) {
+      editForm.reset({
+        organizationName:   editing.organizationName,
+        designationHeld:    editing.designationHeld,
+        organizationTypeId: editing.organizationType.id,
+        startDate:          toInputDate(editing.startDate),
+        endDate:            toInputDate(editing.endDate),
+        isCurrent:          editing.isCurrent,
+        experienceTypes:    editing.experienceTypes.map((t) => t.experienceType.id),
+      });
+    }
+  }, [editing, editForm]);
+
+  const filtered = search
+    ? emp.experiences.filter((e) =>
+        e.organizationName.toLowerCase().includes(search.toLowerCase()) ||
+        e.designationHeld.toLowerCase().includes(search.toLowerCase()))
+    : emp.experiences;
+
   return (
-    <SubCard title="Experience" icon={<Briefcase className="w-4 h-4" />} onAdd={canWrite ? () => setOpen(true) : undefined}>
-      {emp.experiences.length === 0 ? (
-        <EmptyState title="No experience records" description="Add previous employment details." />
+    <SubCard
+      title="Experience" icon={<Briefcase className="w-4 h-4" />}
+      onAdd={canWrite ? () => setOpen(true) : undefined}
+      search={search} onSearch={setSearch}
+    >
+      {filtered.length === 0 ? (
+        <EmptyState title={search ? "No matches" : "No experience records"} description={search ? "Try a different search." : "Add previous employment details."} />
       ) : (
-        <div className="divide-y divide-gray-100 dark:divide-slate-700">
-          {emp.experiences.map((ex) => (
-            <div key={ex.id} className="py-4 flex items-start justify-between gap-4 px-5">
-              <div className="flex-1">
-                <p className="font-medium text-gray-900 dark:text-white">{ex.organizationName}</p>
-                <p className="text-sm text-gray-500 dark:text-slate-400">{ex.designationHeld} · {ex.organizationType.name}</p>
-                <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
-                  {fmtDate(ex.startDate)} → {ex.isCurrent ? "Present" : ex.endDate ? fmtDate(ex.endDate) : "—"}
-                  {" "}· {ex.yearsCalculated.toFixed(1)} yrs
-                </p>
-                <div className="flex gap-1 mt-1 flex-wrap">
-                  {ex.experienceTypes.map((t) => (
-                    <Badge key={t.experienceType.id} variant="info">{t.experienceType.name}</Badge>
-                  ))}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-5">
+          {filtered.map((ex) => (
+            <div key={ex.id} className="p-4 rounded-lg bg-gray-50 dark:bg-slate-700/40 border border-gray-100 dark:border-slate-700">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{ex.organizationName}</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-400">{ex.designationHeld} · {ex.organizationType.name}</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
+                    {fmtDate(ex.startDate)} → {ex.isCurrent ? "Present" : ex.endDate ? fmtDate(ex.endDate) : "—"}
+                    {" "}· {ex.yearsCalculated.toFixed(1)} yrs
+                  </p>
+                  <div className="flex gap-1 mt-1.5 flex-wrap">
+                    {ex.experienceTypes.map((t) => (
+                      <Badge key={t.experienceType.id} variant="info">{t.experienceType.name}</Badge>
+                    ))}
+                  </div>
                 </div>
+                {canWrite && (
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Tooltip label="Edit experience" side="left">
+                      <button onClick={() => setEditing(ex)} className={iconBtn}>
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    </Tooltip>
+                    <Tooltip label="Remove experience" side="left">
+                      <button onClick={() => delMut.mutate(ex.id)} className={iconBtnDanger}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </Tooltip>
+                  </div>
+                )}
               </div>
-              {canWrite && (
-                <Tooltip label="Remove experience" side="left">
-                  <button onClick={() => delMut.mutate(ex.id)} className={`${iconBtnDanger} shrink-0`}>
-                    <Trash2 className="w-4 h-4" />
-                  </button>
-                </Tooltip>
-              )}
             </div>
           ))}
         </div>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Add Experience" size="md">
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <FormField label="Organization Name" required error={errors.organizationName?.message}>
-            <Input {...register("organizationName")} placeholder="Company / Institution name" />
-          </FormField>
-          <FormField label="Designation Held" required error={errors.designationHeld?.message}>
-            <Input {...register("designationHeld")} placeholder="Role / Title" />
-          </FormField>
-          <FormField label="Organization Type" required error={errors.organizationTypeId?.message}>
-            <Select {...register("organizationTypeId")} options={[
-              { value: "", label: "Select type" },
-              ...(orgTypes?.map((o) => ({ value: o.id, label: o.name })) ?? []),
-            ]} />
-          </FormField>
-          <div className="grid grid-cols-2 gap-3">
-            <FormField label="Start Date" required error={errors.startDate?.message}>
-              <Input {...register("startDate")} type="date" />
-            </FormField>
-            {!isCurrent && (
-              <FormField label="End Date" error={errors.endDate?.message}>
-                <Input {...register("endDate")} type="date" />
-              </FormField>
-            )}
-          </div>
-          <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300 cursor-pointer">
-            <input type="checkbox" {...register("isCurrent")} className="rounded" />
-            Currently working here
-          </label>
-          <FormField label="Experience Types" required error={errors.experienceTypes?.message as string}>
-            <div className="flex flex-wrap gap-2">
-              {expTypes?.map((t) => (
-                <label key={t.id} className="flex items-center gap-1.5 text-sm cursor-pointer">
-                  <input type="checkbox" value={t.id} {...register("experienceTypes")} className="rounded" />
-                  {t.name}
-                </label>
-              ))}
-            </div>
-          </FormField>
-          <div className="flex justify-end gap-3 pt-2">
-            <Button variant="secondary" type="button" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="submit" loading={addMut.isPending}>Add</Button>
-          </div>
-        </form>
+      <Modal open={open} onClose={() => { setOpen(false); addForm.reset({ isCurrent: false, experienceTypes: [] }); }} title="Add Experience" size="md">
+        <ExperienceForm
+          form={addForm} isCurrent={addIsCurrent} onSubmit={onAdd}
+          isPending={addMut.isPending} orgTypes={orgTypes} expTypes={expTypes}
+          onCancel={() => { setOpen(false); addForm.reset({ isCurrent: false, experienceTypes: [] }); }}
+          extraFooter={
+            <Button variant="secondary" type="button" onClick={() => {
+              keepOpenRef.current = true;
+              addForm.handleSubmit(onAdd)();
+            }}>Save &amp; Add Another</Button>
+          }
+        />
+      </Modal>
+
+      <Modal open={!!editing} onClose={() => setEditing(null)} title="Edit Experience" size="md">
+        <ExperienceForm
+          form={editForm} isCurrent={editIsCurrent} onSubmit={onEdit}
+          isPending={updMut.isPending} orgTypes={orgTypes} expTypes={expTypes}
+          onCancel={() => setEditing(null)}
+        />
       </Modal>
     </SubCard>
   );
@@ -394,49 +491,94 @@ const skillSchema = z.object({
   proficiencyLevelId: z.string().min(1, "Required"),
   yearsOfExperience:  z.coerce.number().min(0),
 });
+const skillEditSchema = z.object({
+  proficiencyLevelId: z.string().min(1, "Required"),
+  yearsOfExperience:  z.coerce.number().min(0),
+});
+
+const profColor = (level: string) => {
+  const l = level.toLowerCase();
+  if (l.includes("expert") || l.includes("advanced")) return "success";
+  if (l.includes("intermediate")) return "info";
+  return "default";
+};
 
 function SkillTab({ id, emp, canWrite }: { id: string; emp: EmployeeDetail; canWrite: boolean }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen]       = useState(false);
+  const [editing, setEditing] = useState<Skill | null>(null);
+  const [search, setSearch]   = useState("");
+  const keepOpenRef           = useRef(false);
+
   const addMut = useAddSkill(id);
+  const updMut = useUpdateSkill(id);
   const delMut = useDeleteSkill(id);
   const { data: skills } = useSkills();
   const { data: profs }  = useProficiencyLevels();
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<z.infer<typeof skillSchema>>({
-    resolver: zodResolver(skillSchema),
-  });
+  const addForm  = useForm<z.infer<typeof skillSchema>>({ resolver: zodResolver(skillSchema) });
+  const editForm = useForm<z.infer<typeof skillEditSchema>>({ resolver: zodResolver(skillEditSchema) });
 
-  const onSubmit = (v: z.infer<typeof skillSchema>) => {
-    addMut.mutate(v as Parameters<typeof addMut.mutate>[0], { onSuccess: () => { reset(); setOpen(false); } });
+  const onAdd = (v: z.infer<typeof skillSchema>) => {
+    addMut.mutate(v as Parameters<typeof addMut.mutate>[0], {
+      onSuccess: () => {
+        addForm.reset();
+        if (!keepOpenRef.current) setOpen(false);
+        keepOpenRef.current = false;
+      },
+    });
   };
 
-  const profColor = (level: string) => {
-    const l = level.toLowerCase();
-    if (l.includes("expert") || l.includes("advanced")) return "success";
-    if (l.includes("intermediate")) return "info";
-    return "default";
+  const onEdit = (v: z.infer<typeof skillEditSchema>) => {
+    if (!editing) return;
+    updMut.mutate({ id: editing.id, data: v }, { onSuccess: () => setEditing(null) });
   };
+
+  useEffect(() => {
+    if (editing) {
+      editForm.reset({
+        proficiencyLevelId: editing.proficiencyLevel.id,
+        yearsOfExperience:  editing.yearsOfExperience,
+      });
+    }
+  }, [editing, editForm]);
+
+  const filtered = search
+    ? emp.skills.filter((s) =>
+        s.skill.name.toLowerCase().includes(search.toLowerCase()) ||
+        s.skill.category.name.toLowerCase().includes(search.toLowerCase()))
+    : emp.skills;
 
   return (
-    <SubCard title="Skills" icon={<Star className="w-4 h-4" />} onAdd={canWrite ? () => setOpen(true) : undefined}>
-      {emp.skills.length === 0 ? (
-        <EmptyState title="No skills recorded" description="Add the employee's technical and soft skills." />
+    <SubCard
+      title="Skills" icon={<Star className="w-4 h-4" />}
+      onAdd={canWrite ? () => setOpen(true) : undefined}
+      search={search} onSearch={setSearch}
+    >
+      {filtered.length === 0 ? (
+        <EmptyState title={search ? "No matches" : "No skills recorded"} description={search ? "Try a different search." : "Add the employee's technical and soft skills."} />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-5">
-          {emp.skills.map((s) => (
+          {filtered.map((s) => (
             <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-700/40 border border-gray-100 dark:border-slate-700">
               <div>
                 <p className="font-medium text-sm text-gray-900 dark:text-white">{s.skill.name}</p>
                 <p className="text-xs text-gray-400 dark:text-slate-500">{s.skill.category.name} · {s.yearsOfExperience} yr{s.yearsOfExperience !== 1 ? "s" : ""}</p>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <Badge variant={profColor(s.proficiencyLevel.level)}>{s.proficiencyLevel.level}</Badge>
                 {canWrite && (
-                  <Tooltip label="Remove skill" side="left">
-                    <button onClick={() => delMut.mutate(s.id)} className={iconBtnDanger}>
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </Tooltip>
+                  <>
+                    <Tooltip label="Edit skill" side="left">
+                      <button onClick={() => setEditing(s)} className={iconBtn}>
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    </Tooltip>
+                    <Tooltip label="Remove skill" side="left">
+                      <button onClick={() => delMut.mutate(s.id)} className={iconBtnDanger}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </Tooltip>
+                  </>
                 )}
               </div>
             </div>
@@ -444,26 +586,51 @@ function SkillTab({ id, emp, canWrite }: { id: string; emp: EmployeeDetail; canW
         </div>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Add Skill" size="sm">
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <FormField label="Skill" required error={errors.skillId?.message}>
-            <Select {...register("skillId")} options={[
+      {/* Add modal */}
+      <Modal open={open} onClose={() => { setOpen(false); addForm.reset(); }} title="Add Skill" size="sm">
+        <form onSubmit={addForm.handleSubmit(onAdd)} className="flex flex-col gap-4">
+          <FormField label="Skill" required error={addForm.formState.errors.skillId?.message}>
+            <Select {...addForm.register("skillId")} options={[
               { value: "", label: "Select skill" },
               ...(skills?.map((s) => ({ value: s.id, label: `${s.name} (${s.category.name})` })) ?? []),
             ]} />
           </FormField>
-          <FormField label="Proficiency" required error={errors.proficiencyLevelId?.message}>
-            <Select {...register("proficiencyLevelId")} options={[
+          <FormField label="Proficiency" required error={addForm.formState.errors.proficiencyLevelId?.message}>
+            <Select {...addForm.register("proficiencyLevelId")} options={[
               { value: "", label: "Select level" },
               ...(profs?.map((p) => ({ value: p.id, label: p.level })) ?? []),
             ]} />
           </FormField>
-          <FormField label="Years of Experience" required error={errors.yearsOfExperience?.message}>
-            <Input {...register("yearsOfExperience")} type="number" min={0} step={0.5} placeholder="e.g. 2.5" />
+          <FormField label="Years of Experience" required error={addForm.formState.errors.yearsOfExperience?.message}>
+            <Input {...addForm.register("yearsOfExperience")} type="number" min={0} step={0.5} placeholder="e.g. 2.5" />
+          </FormField>
+          <div className="flex justify-between pt-2">
+            <Button variant="secondary" type="button" onClick={() => { keepOpenRef.current = true; addForm.handleSubmit(onAdd)(); }}>
+              Save &amp; Add Another
+            </Button>
+            <div className="flex gap-3">
+              <Button variant="secondary" type="button" onClick={() => { setOpen(false); addForm.reset(); }}>Cancel</Button>
+              <Button type="submit" loading={addMut.isPending}>Add</Button>
+            </div>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit modal */}
+      <Modal open={!!editing} onClose={() => setEditing(null)} title={`Edit Skill — ${editing?.skill.name ?? ""}`} size="sm">
+        <form onSubmit={editForm.handleSubmit(onEdit)} className="flex flex-col gap-4">
+          <FormField label="Proficiency" required error={editForm.formState.errors.proficiencyLevelId?.message}>
+            <Select {...editForm.register("proficiencyLevelId")} options={[
+              { value: "", label: "Select level" },
+              ...(profs?.map((p) => ({ value: p.id, label: p.level })) ?? []),
+            ]} />
+          </FormField>
+          <FormField label="Years of Experience" required error={editForm.formState.errors.yearsOfExperience?.message}>
+            <Input {...editForm.register("yearsOfExperience")} type="number" min={0} step={0.5} placeholder="e.g. 2.5" />
           </FormField>
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="secondary" type="button" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="submit" loading={addMut.isPending}>Add</Button>
+            <Button variant="secondary" type="button" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button type="submit" loading={updMut.isPending}>Save Changes</Button>
           </div>
         </form>
       </Modal>
@@ -478,53 +645,98 @@ const certSchema = z.object({
   issueDate:       z.string().min(1, "Required"),
   expiryDate:      z.string().optional(),
 });
+const certEditSchema = z.object({
+  issueDate:  z.string().min(1, "Required"),
+  expiryDate: z.string().optional(),
+});
 
 function CertTab({ id, emp, canWrite }: { id: string; emp: EmployeeDetail; canWrite: boolean }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen]       = useState(false);
+  const [editing, setEditing] = useState<Certification | null>(null);
+  const [search, setSearch]   = useState("");
+  const keepOpenRef           = useRef(false);
+
   const addMut = useAddCertification(id);
+  const updMut = useUpdateCertification(id);
   const delMut = useDeleteCertification(id);
   const { data: certs } = useCertifications();
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<z.infer<typeof certSchema>>({
-    resolver: zodResolver(certSchema),
-  });
+  const addForm  = useForm<z.infer<typeof certSchema>>({ resolver: zodResolver(certSchema) });
+  const editForm = useForm<z.infer<typeof certEditSchema>>({ resolver: zodResolver(certEditSchema) });
 
-  const onSubmit = (v: z.infer<typeof certSchema>) => {
-    // Strip empty expiryDate — backend validates z.string().date() which rejects ""
-    const payload: Parameters<typeof addMut.mutate>[0] = {
-      ...v,
-      expiryDate: v.expiryDate || undefined,
-    };
-    addMut.mutate(payload, { onSuccess: () => { reset(); setOpen(false); } });
+  const onAdd = (v: z.infer<typeof certSchema>) => {
+    const payload = { ...v, expiryDate: v.expiryDate || undefined };
+    addMut.mutate(payload as Parameters<typeof addMut.mutate>[0], {
+      onSuccess: () => {
+        addForm.reset();
+        if (!keepOpenRef.current) setOpen(false);
+        keepOpenRef.current = false;
+      },
+    });
   };
 
+  const onEdit = (v: z.infer<typeof certEditSchema>) => {
+    if (!editing) return;
+    updMut.mutate({ id: editing.id, data: { ...v, expiryDate: v.expiryDate || null } }, {
+      onSuccess: () => setEditing(null),
+    });
+  };
+
+  useEffect(() => {
+    if (editing) {
+      editForm.reset({
+        issueDate:  toInputDate(editing.issueDate),
+        expiryDate: toInputDate(editing.expiryDate),
+      });
+    }
+  }, [editing, editForm]);
+
+  const filtered = search
+    ? emp.certifications.filter((c) =>
+        c.certification.name.toLowerCase().includes(search.toLowerCase()) ||
+        c.certification.issuingBody.toLowerCase().includes(search.toLowerCase()))
+    : emp.certifications;
+
   return (
-    <SubCard title="Certifications" icon={<Award className="w-4 h-4" />} onAdd={canWrite ? () => setOpen(true) : undefined}>
-      {emp.certifications.length === 0 ? (
-        <EmptyState title="No certifications" description="Add professional certifications held by this employee." />
+    <SubCard
+      title="Certifications" icon={<Award className="w-4 h-4" />}
+      onAdd={canWrite ? () => setOpen(true) : undefined}
+      search={search} onSearch={setSearch}
+    >
+      {filtered.length === 0 ? (
+        <EmptyState title={search ? "No matches" : "No certifications"} description={search ? "Try a different search." : "Add professional certifications held by this employee."} />
       ) : (
-        <div className="divide-y divide-gray-100 dark:divide-slate-700">
-          {emp.certifications.map((c) => (
-            <div key={c.id} className="py-4 px-5 flex items-center justify-between gap-4">
-              <div>
-                <p className="font-medium text-gray-900 dark:text-white">{c.certification.name}</p>
-                <p className="text-xs text-gray-500 dark:text-slate-400">{c.certification.issuingBody}</p>
-                <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
-                  Issued: {fmtDate(c.issueDate)}
-                  {c.expiryDate && ` · Expires: ${fmtDate(c.expiryDate)}`}
-                </p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {c.isExpired
-                  ? <Badge variant="danger">Expired</Badge>
-                  : <Badge variant="success">Valid</Badge>
-                }
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-5">
+          {filtered.map((c) => (
+            <div key={c.id} className="p-4 rounded-lg bg-gray-50 dark:bg-slate-700/40 border border-gray-100 dark:border-slate-700">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{c.certification.name}</p>
+                  <p className="text-xs text-gray-500 dark:text-slate-400">{c.certification.issuingBody}</p>
+                  <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
+                    Issued: {fmtDate(c.issueDate)}
+                    {c.expiryDate && ` · Expires: ${fmtDate(c.expiryDate)}`}
+                  </p>
+                  <div className="mt-1.5">
+                    {c.isExpired
+                      ? <Badge variant="danger">Expired</Badge>
+                      : <Badge variant="success">Valid</Badge>
+                    }
+                  </div>
+                </div>
                 {canWrite && (
-                  <Tooltip label="Remove certification" side="left">
-                    <button onClick={() => delMut.mutate(c.id)} className={iconBtnDanger}>
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </Tooltip>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Tooltip label="Edit certification" side="left">
+                      <button onClick={() => setEditing(c)} className={iconBtn}>
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                    </Tooltip>
+                    <Tooltip label="Remove certification" side="left">
+                      <button onClick={() => delMut.mutate(c.id)} className={iconBtnDanger}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </Tooltip>
+                  </div>
                 )}
               </div>
             </div>
@@ -532,27 +744,110 @@ function CertTab({ id, emp, canWrite }: { id: string; emp: EmployeeDetail; canWr
         </div>
       )}
 
-      <Modal open={open} onClose={() => setOpen(false)} title="Add Certification" size="sm">
-        <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
-          <FormField label="Certification" required error={errors.certificationId?.message}>
-            <Select {...register("certificationId")} options={[
+      {/* Add modal */}
+      <Modal open={open} onClose={() => { setOpen(false); addForm.reset(); }} title="Add Certification" size="sm">
+        <form onSubmit={addForm.handleSubmit(onAdd)} className="flex flex-col gap-4">
+          <FormField label="Certification" required error={addForm.formState.errors.certificationId?.message}>
+            <Select {...addForm.register("certificationId")} options={[
               { value: "", label: "Select certification" },
               ...(certs?.map((c) => ({ value: c.id, label: `${c.name} — ${c.issuingBody}` })) ?? []),
             ]} />
           </FormField>
-          <FormField label="Issue Date" required error={errors.issueDate?.message}>
-            <Input {...register("issueDate")} type="date" />
+          <FormField label="Issue Date" required error={addForm.formState.errors.issueDate?.message}>
+            <Input {...addForm.register("issueDate")} type="date" />
           </FormField>
-          <FormField label="Expiry Date" error={errors.expiryDate?.message} hint="Leave blank if no expiry">
-            <Input {...register("expiryDate")} type="date" />
+          <FormField label="Expiry Date" error={addForm.formState.errors.expiryDate?.message} hint="Leave blank if no expiry">
+            <Input {...addForm.register("expiryDate")} type="date" />
+          </FormField>
+          <div className="flex justify-between pt-2">
+            <Button variant="secondary" type="button" onClick={() => { keepOpenRef.current = true; addForm.handleSubmit(onAdd)(); }}>
+              Save &amp; Add Another
+            </Button>
+            <div className="flex gap-3">
+              <Button variant="secondary" type="button" onClick={() => { setOpen(false); addForm.reset(); }}>Cancel</Button>
+              <Button type="submit" loading={addMut.isPending}>Add</Button>
+            </div>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Edit modal */}
+      <Modal open={!!editing} onClose={() => setEditing(null)} title={`Edit — ${editing?.certification.name ?? ""}`} size="sm">
+        <form onSubmit={editForm.handleSubmit(onEdit)} className="flex flex-col gap-4">
+          <FormField label="Issue Date" required error={editForm.formState.errors.issueDate?.message}>
+            <Input {...editForm.register("issueDate")} type="date" />
+          </FormField>
+          <FormField label="Expiry Date" error={editForm.formState.errors.expiryDate?.message} hint="Leave blank to clear expiry">
+            <Input {...editForm.register("expiryDate")} type="date" />
           </FormField>
           <div className="flex justify-end gap-3 pt-2">
-            <Button variant="secondary" type="button" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button type="submit" loading={addMut.isPending}>Add</Button>
+            <Button variant="secondary" type="button" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button type="submit" loading={updMut.isPending}>Save Changes</Button>
           </div>
         </form>
       </Modal>
     </SubCard>
+  );
+}
+
+// ── ExperienceForm — extracted to avoid remount issues ────────────────────────
+
+function ExperienceForm({ form, isCurrent, onSubmit, isPending, onCancel, extraFooter, orgTypes, expTypes }: {
+  form: ReturnType<typeof useForm<z.infer<typeof expSchema>>>;
+  isCurrent: boolean;
+  onSubmit: (v: z.infer<typeof expSchema>) => void;
+  isPending: boolean;
+  onCancel: () => void;
+  extraFooter?: React.ReactNode;
+  orgTypes?: { id: string; name: string }[];
+  expTypes?: { id: string; name: string }[];
+}) {
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-4">
+      <FormField label="Organization Name" required error={form.formState.errors.organizationName?.message}>
+        <Input {...form.register("organizationName")} placeholder="Company / Institution name" />
+      </FormField>
+      <FormField label="Designation Held" required error={form.formState.errors.designationHeld?.message}>
+        <Input {...form.register("designationHeld")} placeholder="Role / Title" />
+      </FormField>
+      <FormField label="Organization Type" required error={form.formState.errors.organizationTypeId?.message}>
+        <Select {...form.register("organizationTypeId")} options={[
+          { value: "", label: "Select type" },
+          ...(orgTypes?.map((o) => ({ value: o.id, label: o.name })) ?? []),
+        ]} />
+      </FormField>
+      <div className="grid grid-cols-2 gap-3">
+        <FormField label="Start Date" required error={form.formState.errors.startDate?.message}>
+          <Input {...form.register("startDate")} type="date" />
+        </FormField>
+        {!isCurrent && (
+          <FormField label="End Date" error={form.formState.errors.endDate?.message}>
+            <Input {...form.register("endDate")} type="date" />
+          </FormField>
+        )}
+      </div>
+      <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-slate-300 cursor-pointer">
+        <input type="checkbox" {...form.register("isCurrent")} className="rounded" />
+        Currently working here
+      </label>
+      <FormField label="Experience Types" required error={form.formState.errors.experienceTypes?.message as string}>
+        <div className="flex flex-wrap gap-2">
+          {expTypes?.map((t) => (
+            <label key={t.id} className="flex items-center gap-1.5 text-sm cursor-pointer">
+              <input type="checkbox" value={t.id} {...form.register("experienceTypes")} className="rounded" />
+              {t.name}
+            </label>
+          ))}
+        </div>
+      </FormField>
+      <div className="flex justify-between pt-2">
+        {extraFooter ?? <span />}
+        <div className="flex gap-3">
+          <Button variant="secondary" type="button" onClick={onCancel}>Cancel</Button>
+          <Button type="submit" loading={isPending}>Save</Button>
+        </div>
+      </div>
+    </form>
   );
 }
 
@@ -595,33 +890,80 @@ function BpvTab({ id }: { id: string }) {
   );
 }
 
-// ── Shared helpers ────────────────────────────────────────────────────────────
+// ── SubCard — shared wrapper with search + add ─────────────────────────────────
 
-function SubCard({ title, icon, onAdd, children }: {
+function SubCard({ title, icon, onAdd, search, onSearch, children }: {
   title: string; icon: React.ReactNode;
-  onAdd?: () => void; children: React.ReactNode;
+  onAdd?: () => void;
+  search?: string; onSearch?: (v: string) => void;
+  children: React.ReactNode;
 }) {
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const searchOpen = hovered || focused || !!(search);
+
   return (
     <Card padding="none">
-      <CardHeader className="p-5 pb-0">
-        <div className="flex items-center justify-between">
-          <CardTitle icon={icon}>{title}</CardTitle>
-          {onAdd && (
-            <Tooltip label={`Add ${title.toLowerCase()}`}>
-              <button
-                onClick={onAdd}
-                className="p-2 rounded-xl text-gray-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all duration-150 active:scale-95"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </Tooltip>
+      <CardHeader className="p-5 pb-4">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <CardTitle icon={icon}>{title}</CardTitle>
+            {onAdd && (
+              <Tooltip label={`Add ${title.toLowerCase()}`}>
+                <button
+                  onClick={onAdd}
+                  className="p-1.5 rounded-lg text-gray-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all duration-150 active:scale-95"
+                >
+                  <Plus className="w-4 h-4" />
+                </button>
+              </Tooltip>
+            )}
+          </div>
+          {onSearch && (
+            <div
+              className="flex items-center gap-1"
+              onMouseEnter={() => setHovered(true)}
+              onMouseLeave={() => setHovered(false)}
+            >
+              <div className={cn(
+                "flex items-center gap-1.5 rounded-lg border bg-white dark:bg-slate-800 transition-all duration-200 overflow-hidden",
+                searchOpen
+                  ? "w-44 px-2 py-1 border-gray-200 dark:border-slate-600"
+                  : "w-8 h-8 border-transparent justify-center"
+              )}>
+                <Search className={cn("shrink-0 text-gray-400 dark:text-slate-500", searchOpen ? "w-3.5 h-3.5" : "w-4 h-4 cursor-pointer")}
+                  onClick={() => { if (!searchOpen) inputRef.current?.focus(); }}
+                />
+                <input
+                  ref={inputRef}
+                  value={search}
+                  onChange={(e) => onSearch(e.target.value)}
+                  onFocus={() => setFocused(true)}
+                  onBlur={() => setFocused(false)}
+                  placeholder="Search…"
+                  className={cn(
+                    "bg-transparent text-xs text-gray-700 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 outline-none transition-all duration-200",
+                    searchOpen ? "w-full" : "w-0"
+                  )}
+                />
+                {search && (
+                  <button onClick={() => onSearch("")} className="shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300">
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </div>
           )}
         </div>
       </CardHeader>
+      <CardDivider />
       {children}
     </Card>
   );
 }
+
+// ── Tiny helpers ──────────────────────────────────────────────────────────────
 
 function Th({ children }: { children: React.ReactNode }) {
   return <th className="px-5 py-2.5 text-left font-semibold tracking-wide">{children}</th>;

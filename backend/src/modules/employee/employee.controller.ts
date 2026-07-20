@@ -95,6 +95,12 @@ export async function addQual(req: Request, res: Response, next: NextFunction) {
     res.status(201).json({ success: true, data: q });
   } catch (e) { next(e); }
 }
+export async function updateQual(req: Request, res: Response, next: NextFunction) {
+  try {
+    const q = await svc.updateQualification(req.params["id"]!, req.params["qualId"]!, req.body, req.user!.emp);
+    res.json({ success: true, data: q });
+  } catch (e) { next(e); }
+}
 export async function removeQual(req: Request, res: Response, next: NextFunction) {
   try {
     await svc.deleteQualification(req.params["id"]!, req.params["qualId"]!, req.user!.emp);
@@ -108,6 +114,12 @@ export async function addExp(req: Request, res: Response, next: NextFunction) {
   try {
     const e = await svc.addExperience(req.params["id"]!, req.body, req.user!.emp);
     res.status(201).json({ success: true, data: e });
+  } catch (e) { next(e); }
+}
+export async function updateExp(req: Request, res: Response, next: NextFunction) {
+  try {
+    const e = await svc.updateExperience(req.params["id"]!, req.params["expId"]!, req.body, req.user!.emp);
+    res.json({ success: true, data: e });
   } catch (e) { next(e); }
 }
 export async function removeExp(req: Request, res: Response, next: NextFunction) {
@@ -125,6 +137,12 @@ export async function addSkill(req: Request, res: Response, next: NextFunction) 
     res.status(201).json({ success: true, data: s });
   } catch (e) { next(e); }
 }
+export async function updateSkill(req: Request, res: Response, next: NextFunction) {
+  try {
+    const s = await svc.updateSkill(req.params["id"]!, req.params["skillId"]!, req.body, req.user!.emp);
+    res.json({ success: true, data: s });
+  } catch (e) { next(e); }
+}
 export async function removeSkill(req: Request, res: Response, next: NextFunction) {
   try {
     await svc.deleteSkill(req.params["id"]!, req.params["skillId"]!, req.user!.emp);
@@ -138,6 +156,12 @@ export async function addCert(req: Request, res: Response, next: NextFunction) {
   try {
     const c = await svc.addCertification(req.params["id"]!, req.body, req.user!.emp);
     res.status(201).json({ success: true, data: c });
+  } catch (e) { next(e); }
+}
+export async function updateCert(req: Request, res: Response, next: NextFunction) {
+  try {
+    const c = await svc.updateCertification(req.params["id"]!, req.params["certId"]!, req.body, req.user!.emp);
+    res.json({ success: true, data: c });
   } catch (e) { next(e); }
 }
 export async function removeCert(req: Request, res: Response, next: NextFunction) {
