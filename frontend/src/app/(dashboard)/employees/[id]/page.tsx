@@ -913,7 +913,7 @@ function SubCard({ title, icon, onAdd, search, onSearch, children }: {
               <Tooltip label={`Add ${title.toLowerCase()}`}>
                 <button
                   onClick={onAdd}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center bg-primary-600 hover:bg-primary-700 text-white transition-all duration-150 active:scale-95 shadow-sm shadow-primary-600/20"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center bg-[#f9701a] hover:bg-[#c2440e] text-white transition-all duration-150 active:scale-95 shadow-sm shadow-[#f9701a]/20"
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>
@@ -955,7 +955,7 @@ function SubCard({ title, icon, onAdd, search, onSearch, children }: {
                 className={cn(
                   "w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 active:scale-95",
                   searchOpen || search
-                    ? "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
+                    ? "bg-[#fff7ed] dark:bg-[#7c2f13]/30 text-[#f9701a] dark:text-[#fb8f4a]"
                     : "text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700"
                 )}
               >

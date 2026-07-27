@@ -41,7 +41,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         {/* Logo / Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary-600 shadow-lg shadow-primary-600/30 mb-4">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[#f9701a] shadow-lg shadow-[#f9701a]/30 mb-4">
             <span className="text-white text-xl font-bold tracking-tight">HR</span>
           </div>
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Sign in to HRMS</h1>
@@ -66,7 +66,7 @@ export default function LoginPage() {
                 {...register("email")}
                 className={cn(
                   "block w-full rounded-lg border px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500",
-                  "focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+                  "focus:outline-none focus:ring-2 focus:ring-[#f9701a] focus:border-transparent",
                   "transition duration-150",
                   errors.email
                     ? "border-red-400 bg-red-50 dark:border-red-500/50 dark:bg-red-900/20"
@@ -95,7 +95,7 @@ export default function LoginPage() {
                   {...register("password")}
                   className={cn(
                     "block w-full rounded-lg border px-3.5 py-2.5 pr-10 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500",
-                    "focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent",
+                    "focus:outline-none focus:ring-2 focus:ring-[#f9701a] focus:border-transparent",
                     "transition duration-150",
                     errors.password
                       ? "border-red-400 bg-red-50 dark:border-red-500/50 dark:bg-red-900/20"
@@ -127,10 +127,10 @@ export default function LoginPage() {
               disabled={loginPending}
               className={cn(
                 "w-full flex items-center justify-center gap-2 rounded-lg px-4 py-2.5",
-                "bg-primary-600 text-white text-sm font-medium",
-                "hover:bg-primary-700 active:bg-primary-800",
-                "focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 dark:focus:ring-offset-slate-800",
-                "shadow-md shadow-primary-600/25 hover:shadow-lg hover:shadow-primary-600/30",
+                "bg-[#f9701a] text-white text-sm font-medium",
+                "hover:bg-[#c2440e] active:bg-[#9a3714]",
+                "focus:outline-none focus:ring-2 focus:ring-[#f9701a] focus:ring-offset-2 dark:focus:ring-offset-slate-800",
+                "shadow-md shadow-[#f9701a]/25 hover:shadow-lg hover:shadow-[#f9701a]/30",
                 "disabled:opacity-60 disabled:cursor-not-allowed",
                 "transition-all duration-150"
               )}

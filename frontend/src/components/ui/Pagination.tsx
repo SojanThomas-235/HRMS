@@ -52,7 +52,7 @@ export function Pagination({ page, pages, total, limit, onPageChange }: Paginati
               className={cn(
                 "w-8 h-8 rounded-lg text-sm font-medium transition-colors",
                 p === page
-                  ? "bg-primary-600 text-white dark:bg-primary-500"
+                  ? "bg-[#f9701a] text-white dark:bg-[#ea5a10]"
                   : "text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700"
               )}
             >
