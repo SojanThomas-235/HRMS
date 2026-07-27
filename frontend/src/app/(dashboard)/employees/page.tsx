@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   UserPlus, Search, Filter, X, Users, SlidersHorizontal,
   ArrowRight, Pencil, Trash2, Mail, Phone,
-  Calendar, Building2, Briefcase, TrendingUp, UserCircle,
+  Calendar, Building2, Briefcase, UserCircle,
 } from "lucide-react";
 import {
   Button, Badge, Breadcrumb, Pagination,
@@ -116,39 +116,10 @@ function InfoRow({
   );
 }
 
-// ── Action chip button ────────────────────────────────────────────────────────
-
-function ActionChip({
-  icon: Icon,
-  label,
-  tooltip,
-  onClick,
-  variant = "default",
-}: {
-  icon: React.ElementType;
-  label: string;
-  tooltip: string;
-  onClick: () => void;
-  variant?: "default" | "primary" | "danger";
-}) {
-  const base = "inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all duration-150 active:scale-95 cursor-pointer border";
-  const styles = {
-    default: "bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700 hover:border-gray-300 dark:hover:border-slate-600 hover:-translate-y-0.5 hover:shadow-sm",
-    primary: "bg-primary-600 border-primary-600 text-white hover:bg-primary-700 hover:border-primary-700 hover:-translate-y-0.5 hover:shadow-md hover:shadow-primary-500/20",
-    danger:  "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 hover:-translate-y-0.5 hover:shadow-sm",
-  };
-
-  return (
-    <Tooltip label={tooltip}>
-      <button onClick={onClick} className={cn(base, styles[variant])}>
-        <Icon className="w-4 h-4 shrink-0" />
-        {label}
-      </button>
-    </Tooltip>
-  );
-}
-
 // ── Employee preview panel content ────────────────────────────────────────────
+
+const panelIconBtn = "p-1.5 rounded-lg transition-colors text-gray-400 hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700";
+const panelIconBtnDanger = "p-1.5 rounded-lg transition-colors text-gray-400 hover:text-red-600 dark:text-slate-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20";
 
 function EmployeePreview({
   emp,
@@ -165,9 +136,33 @@ function EmployeePreview({
 }) {
   const router = useRouter();
 
+  const headerActions = (
+    <>
+      <Tooltip label="View full profile" side="bottom">
+        <button onClick={() => router.push(`/employees/${emp.id}`)} className={panelIconBtn}>
+          <ArrowRight className="w-4 h-4" />
+        </button>
+      </Tooltip>
+      {canWrite && (
+        <Tooltip label="Edit employee" side="bottom">
+          <button onClick={() => router.push(`/employees/${emp.id}/edit`)} className={panelIconBtn}>
+            <Pencil className="w-4 h-4" />
+          </button>
+        </Tooltip>
+      )}
+      {canDelete && (
+        <Tooltip label="Delete employee" side="bottom">
+          <button onClick={() => { onClose(); onDelete(emp); }} className={panelIconBtnDanger}>
+            <Trash2 className="w-4 h-4" />
+          </button>
+        </Tooltip>
+      )}
+    </>
+  );
+
   return (
     <>
-      <SidePanel.Header onClose={onClose}>Quick Preview</SidePanel.Header>
+      <SidePanel.Header onClose={onClose} actions={headerActions}>Quick Preview</SidePanel.Header>
 
       <SidePanel.Body>
         {/* ── Profile hero ─────────────────────────────────────────── */}
@@ -195,24 +190,8 @@ function EmployeePreview({
             BPV Score
           </p>
           {emp.latestBpvScore != null ? (
-            <div className="flex items-center gap-5">
+            <div className="flex justify-center">
               <BpvRing score={emp.latestBpvScore} />
-              <div className="flex-1 space-y-2">
-                <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">
-                  Best Performance Value — a composite score across education, experience, org profile, skills, and certifications.
-                </p>
-                <div className={cn(
-                  "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold",
-                  emp.latestBpvScore >= 70
-                    ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400"
-                    : emp.latestBpvScore >= 40
-                    ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400"
-                    : "bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400"
-                )}>
-                  <TrendingUp className="w-3 h-3" />
-                  {emp.latestBpvScore >= 70 ? "Top performer" : emp.latestBpvScore >= 40 ? "In progress" : "Needs attention"}
-                </div>
-              </div>
             </div>
           ) : (
             <p className="text-sm text-gray-400 dark:text-slate-500 italic">No BPV score calculated yet</p>
@@ -220,7 +199,7 @@ function EmployeePreview({
         </div>
 
         {/* ── Info ─────────────────────────────────────────────────── */}
-        <div className="px-6 py-5 space-y-4 border-b border-gray-100 dark:border-slate-700/60">
+        <div className="px-6 py-5 space-y-4">
           <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-slate-500">
             Details
           </p>
@@ -238,39 +217,6 @@ function EmployeePreview({
           {emp.manager && (
             <InfoRow icon={UserCircle} label="Reports To" value={emp.manager.fullName} />
           )}
-        </div>
-
-        {/* ── Actions ──────────────────────────────────────────────── */}
-        <div className="px-6 py-5">
-          <p className="text-xs font-semibold uppercase tracking-widest text-gray-400 dark:text-slate-500 mb-4">
-            Actions
-          </p>
-          <div className="flex flex-col gap-2.5">
-            <ActionChip
-              icon={ArrowRight}
-              label="View Full Profile"
-              tooltip="Open complete employee record"
-              variant="primary"
-              onClick={() => router.push(`/employees/${emp.id}`)}
-            />
-            {canWrite && (
-              <ActionChip
-                icon={Pencil}
-                label="Edit Profile"
-                tooltip="Update employee information"
-                onClick={() => router.push(`/employees/${emp.id}/edit`)}
-              />
-            )}
-            {canDelete && (
-              <ActionChip
-                icon={Trash2}
-                label="Delete Employee"
-                tooltip="Archive and deactivate this employee"
-                variant="danger"
-                onClick={() => { onClose(); onDelete(emp); }}
-              />
-            )}
-          </div>
         </div>
       </SidePanel.Body>
     </>

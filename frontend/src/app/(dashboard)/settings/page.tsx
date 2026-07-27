@@ -912,7 +912,7 @@ function CertificationsTab() {
                   <td className="px-4 py-3">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-900/25 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700">{c.scoreContribution} pts</span>
                   </td>
-                  <td className="px-4 py-3">{c.hasExpiry ? <Badge variant="warning">Expires</Badge> : <Badge variant="secondary">Lifetime</Badge>}</td>
+                  <td className="px-4 py-3">{c.hasExpiry ? <Badge variant="warning">Expires</Badge> : <Badge>Lifetime</Badge>}</td>
                   <td className="px-4 py-3"><ActiveBadge active={c.isActive} /></td>
                   <td className="px-4 py-3">
                     <RowActions

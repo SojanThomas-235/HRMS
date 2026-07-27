@@ -71,10 +71,13 @@ export function SidePanel({ open, onClose, children, className }: SidePanelProps
 SidePanel.Header = function SidePanelHeader({
   onClose,
   children,
+  actions,
   className,
 }: {
   onClose: () => void;
   children?: React.ReactNode;
+  /** Icon buttons rendered between the title and the close button */
+  actions?: React.ReactNode;
   className?: string;
 }) {
   return (
@@ -86,17 +89,24 @@ SidePanel.Header = function SidePanelHeader({
       <span className="text-sm font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
         {children}
       </span>
-      <button
-        onClick={onClose}
-        className={cn(
-          "p-1.5 rounded-lg transition-colors",
-          "text-gray-400 hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-200",
-          "hover:bg-gray-100 dark:hover:bg-slate-700",
+      <div className="flex items-center gap-0.5">
+        {actions}
+        {/* Divider if actions present */}
+        {actions && (
+          <span className="w-px h-4 bg-gray-200 dark:bg-slate-700 mx-1" />
         )}
-        aria-label="Close panel"
-      >
-        <X className="w-4 h-4" />
-      </button>
+        <button
+          onClick={onClose}
+          className={cn(
+            "p-1.5 rounded-lg transition-colors",
+            "text-gray-400 hover:text-gray-700 dark:text-slate-500 dark:hover:text-slate-200",
+            "hover:bg-gray-100 dark:hover:bg-slate-700",
+          )}
+          aria-label="Close panel"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 };

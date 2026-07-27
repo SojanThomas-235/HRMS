@@ -905,36 +905,35 @@ function SubCard({ title, icon, onAdd, search, onSearch, children }: {
 
   return (
     <Card padding="none">
-      <CardHeader className="p-5 pb-4">
+      <CardHeader className="px-5 py-3.5">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <CardTitle icon={icon}>{title}</CardTitle>
             {onAdd && (
               <Tooltip label={`Add ${title.toLowerCase()}`}>
                 <button
                   onClick={onAdd}
-                  className="p-1.5 rounded-lg text-gray-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 transition-all duration-150 active:scale-95"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center bg-primary-600 hover:bg-primary-700 text-white transition-all duration-150 active:scale-95 shadow-sm shadow-primary-600/20"
                 >
-                  <Plus className="w-4 h-4" />
+                  <Plus className="w-3.5 h-3.5" />
                 </button>
               </Tooltip>
             )}
           </div>
           {onSearch && (
             <div
-              className="flex items-center gap-1"
+              className="flex items-center gap-1.5"
               onMouseEnter={() => setHovered(true)}
               onMouseLeave={() => setHovered(false)}
             >
+              {/* Animated search input */}
               <div className={cn(
                 "flex items-center gap-1.5 rounded-lg border bg-white dark:bg-slate-800 transition-all duration-200 overflow-hidden",
                 searchOpen
-                  ? "w-44 px-2 py-1 border-gray-200 dark:border-slate-600"
-                  : "w-8 h-8 border-transparent justify-center"
+                  ? "w-44 px-2.5 py-1.5 border-gray-200 dark:border-slate-600 shadow-sm"
+                  : "w-0 border-transparent opacity-0 pointer-events-none"
               )}>
-                <Search className={cn("shrink-0 text-gray-400 dark:text-slate-500", searchOpen ? "w-3.5 h-3.5" : "w-4 h-4 cursor-pointer")}
-                  onClick={() => { if (!searchOpen) inputRef.current?.focus(); }}
-                />
+                <Search className="w-3 h-3 shrink-0 text-gray-400 dark:text-slate-500" />
                 <input
                   ref={inputRef}
                   value={search}
@@ -942,10 +941,7 @@ function SubCard({ title, icon, onAdd, search, onSearch, children }: {
                   onFocus={() => setFocused(true)}
                   onBlur={() => setFocused(false)}
                   placeholder="Search…"
-                  className={cn(
-                    "bg-transparent text-xs text-gray-700 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 outline-none transition-all duration-200",
-                    searchOpen ? "w-full" : "w-0"
-                  )}
+                  className="flex-1 text-xs bg-transparent outline-none text-gray-700 dark:text-slate-200 placeholder-gray-400 dark:placeholder-slate-500 min-w-0"
                 />
                 {search && (
                   <button onClick={() => onSearch("")} className="shrink-0 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300">
@@ -953,11 +949,22 @@ function SubCard({ title, icon, onAdd, search, onSearch, children }: {
                   </button>
                 )}
               </div>
+              {/* Search icon button — always visible, glows when open */}
+              <button
+                onClick={() => inputRef.current?.focus()}
+                className={cn(
+                  "w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 active:scale-95",
+                  searchOpen || search
+                    ? "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400"
+                    : "text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700"
+                )}
+              >
+                <Search className="w-3.5 h-3.5" />
+              </button>
             </div>
           )}
         </div>
       </CardHeader>
-      <CardDivider />
       {children}
     </Card>
   );
