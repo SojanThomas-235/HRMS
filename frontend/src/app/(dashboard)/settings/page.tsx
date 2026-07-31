@@ -69,7 +69,7 @@ function SortableHeader({ cols, sort, onSort }: { cols: (ColDef | string)[]; sor
               <span className="inline-flex items-center gap-1">
                 {label}
                 {sortKey && (active
-                  ? sort.dir === "asc" ? <ArrowUp className="w-3 h-3 text-primary-500" /> : <ArrowDown className="w-3 h-3 text-primary-500" />
+                  ? sort.dir === "asc" ? <ArrowUp className="w-3 h-3 text-[#27B1AE]" /> : <ArrowDown className="w-3 h-3 text-[#27B1AE]" />
                   : <ArrowUpDown className="w-3 h-3 text-gray-300 dark:text-slate-600" />)}
               </span>
             </th>
@@ -128,128 +128,138 @@ function TabToolbar({
   const resetFilters = () => filterGroups.forEach((g) => g.onChange(g.options[0]?.value ?? "all"));
 
   const btnBase = "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-150 active:scale-95 shrink-0";
-  const btnIdle = cn(btnBase, "text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700");
-  const btnLit  = cn(btnBase, "bg-primary-50 dark:bg-primary-900/30 text-primary-600 dark:text-primary-400");
-  const btnAdd  = cn(btnBase, "bg-primary-600 hover:bg-primary-700 text-white shadow-sm shadow-primary-600/20");
+  /* On the teal hero zone — use white-based colours in both modes */
+  const btnIdle = cn(btnBase, "text-white/50 hover:text-white hover:bg-white/15 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-white/10");
+  const btnLit  = cn(btnBase, "bg-white/20 text-white dark:bg-[#27B1AE]/30 dark:text-[#4fc4c1]");
+  const btnAdd  = cn(btnBase, "bg-white/20 hover:bg-white/30 text-white border border-white/30 shadow-sm");
+
+  /* Inside the white card, use dark-text colours for buttons */
+  const cardBtnBase = "w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-150 active:scale-95 shrink-0";
+  const cardBtnIdle = cn(cardBtnBase, "text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700");
+  const cardBtnLit  = cn(cardBtnBase, "bg-[#e8f7f7] dark:bg-[#27B1AE]/30 text-[#27B1AE] dark:text-[#4fc4c1]");
+  const cardBtnAdd  = cn(cardBtnBase, "bg-[#27B1AE] hover:bg-[#1e9e9b] text-white shadow-sm");
 
   return (
     <div className="mb-4">
-      {/* ── Main toolbar row ── */}
-      <div className="flex items-center justify-between gap-4">
-        {/* Left: title + desc */}
-        <div className="min-w-0">
-          <h2 className="text-base font-semibold text-gray-900 dark:text-white truncate">{title}</h2>
-          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">{desc}</p>
-        </div>
-
-        {/* Right: icon buttons */}
-        <div className="flex items-center gap-2 shrink-0">
-
-          {/* Search — hover to expand */}
-          <div
-            className="flex items-center gap-2"
-            onMouseEnter={() => setHovered(true)}
-            onMouseLeave={() => setHovered(false)}
-          >
-            <div className={cn(
-              "flex items-center overflow-hidden transition-all duration-200",
-              searchOpen ? "w-52 opacity-100" : "w-0 opacity-0 pointer-events-none",
-            )}>
-              <div className="flex items-center gap-1.5 w-full border border-gray-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-800 px-3 py-1.5 shadow-sm">
-                <Search className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" />
-                <input
-                  ref={inputRef}
-                  value={searchValue}
-                  onChange={(e) => onSearchChange(e.target.value)}
-                  onFocus={() => setFocused(true)}
-                  onBlur={() => setFocused(false)}
-                  placeholder="Search…"
-                  className="flex-1 text-sm bg-transparent outline-none text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 min-w-0"
-                />
-                {searchValue && (
-                  <button
-                    onMouseDown={(e) => { e.preventDefault(); onSearchChange(""); }}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
-            </div>
-            {/* Search icon (non-interactive — hover on parent does the work) */}
-            <div className={searchOpen ? btnLit : btnIdle}>
-              <Search className="w-4 h-4" />
-            </div>
+      {/* ── White toolbar card ── */}
+      <div className="bg-white/60 dark:bg-slate-800/50 backdrop-blur-xl backdrop-saturate-150 rounded-2xl border border-[#dde8f0] dark:border-slate-700 shadow-sm px-5 py-4">
+        {/* Main toolbar row */}
+        <div className="flex items-center justify-between gap-4">
+          {/* Left: title + desc */}
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-sage-600 dark:text-white truncate">{title}</h2>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">{desc}</p>
           </div>
 
-          {/* Filter toggle */}
-          {filterGroups.length > 0 && (
-            <Tooltip label={filterOpen ? "Close filters" : "Filter"}>
-              <button
-                onClick={() => setFilterOpen((v) => !v)}
-                className={cn(filterOpen || filterActive ? btnLit : btnIdle, "relative")}
-              >
-                <SlidersHorizontal className="w-4 h-4" />
-                {filterActive && !filterOpen && (
-                  <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-primary-500" />
-                )}
+          {/* Right: icon buttons */}
+          <div className="flex items-center gap-2 shrink-0">
+
+            {/* Search — hover to expand */}
+            <div
+              className="flex items-center gap-2"
+              onMouseEnter={() => setHovered(true)}
+              onMouseLeave={() => setHovered(false)}
+            >
+              <div className={cn(
+                "flex items-center overflow-hidden transition-all duration-200",
+                searchOpen ? "w-52 opacity-100" : "w-0 opacity-0 pointer-events-none",
+              )}>
+                <div className="flex items-center gap-1.5 w-full border border-gray-200 dark:border-slate-600 rounded-xl bg-gray-50 dark:bg-slate-700/50 px-3 py-1.5 shadow-sm">
+                  <Search className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" />
+                  <input
+                    ref={inputRef}
+                    value={searchValue}
+                    onChange={(e) => onSearchChange(e.target.value)}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => setFocused(false)}
+                    placeholder="Search…"
+                    className="flex-1 text-sm bg-transparent outline-none text-sage-600 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 min-w-0"
+                  />
+                  {searchValue && (
+                    <button
+                      onMouseDown={(e) => { e.preventDefault(); onSearchChange(""); }}
+                      className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 transition-colors"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              </div>
+              {/* Search icon */}
+              <div className={searchOpen ? cardBtnLit : cardBtnIdle}>
+                <Search className="w-4 h-4" />
+              </div>
+            </div>
+
+            {/* Filter toggle */}
+            {filterGroups.length > 0 && (
+              <Tooltip label={filterOpen ? "Close filters" : "Filter"}>
+                <button
+                  onClick={() => setFilterOpen((v) => !v)}
+                  className={cn(filterOpen || filterActive ? cardBtnLit : cardBtnIdle, "relative")}
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                  {filterActive && !filterOpen && (
+                    <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#27B1AE]" />
+                  )}
+                </button>
+              </Tooltip>
+            )}
+
+            {/* Add */}
+            <Tooltip label={addLabel ?? `Add ${title.toLowerCase()}`}>
+              <button onClick={onAdd} className={cardBtnAdd}>
+                <Plus className="w-4 h-4" />
               </button>
             </Tooltip>
-          )}
-
-          {/* Add */}
-          <Tooltip label={addLabel ?? `Add ${title.toLowerCase()}`}>
-            <button onClick={onAdd} className={btnAdd}>
-              <Plus className="w-4 h-4" />
-            </button>
-          </Tooltip>
+          </div>
         </div>
-      </div>
 
-      {/* ── Filter bar — slides down below toolbar ── */}
-      <div className={cn(
-        "grid transition-all duration-200 ease-out",
-        filterOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
-      )}>
-        <div className="overflow-hidden">
-          <div className="mt-3 px-4 py-3 rounded-xl bg-gray-50 dark:bg-slate-800/70 border border-gray-200 dark:border-slate-700">
-            <div className="flex flex-wrap gap-x-8 gap-y-3 items-start">
-              {filterGroups.map((group) => (
-                <div key={group.label} className="flex items-center gap-3">
-                  {/* Label */}
-                  <span className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider shrink-0">
-                    {group.label}
-                  </span>
-                  {/* Pill buttons */}
-                  <div className="flex flex-wrap gap-1.5">
-                    {group.options.map((opt) => (
-                      <button
-                        key={opt.value}
-                        onClick={() => group.onChange(opt.value)}
-                        className={cn(
-                          "px-3 py-1 rounded-lg text-xs font-medium transition-all duration-150 border",
-                          group.value === opt.value
-                            ? "bg-primary-600 border-primary-600 text-white shadow-sm"
-                            : "bg-white dark:bg-slate-700/60 border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:border-primary-400 dark:hover:border-primary-500 hover:text-primary-600 dark:hover:text-primary-400"
-                        )}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
+        {/* ── Filter bar — slides down inside card ── */}
+        <div className={cn(
+          "grid transition-all duration-200 ease-out",
+          filterOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+        )}>
+          <div className="overflow-hidden">
+            <div className="mt-3 pt-3 border-t border-gray-100 dark:border-slate-700">
+              <div className="flex flex-wrap gap-x-8 gap-y-3 items-start">
+                {filterGroups.map((group) => (
+                  <div key={group.label} className="flex items-center gap-3">
+                    {/* Label */}
+                    <span className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider shrink-0">
+                      {group.label}
+                    </span>
+                    {/* Pill buttons */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {group.options.map((opt) => (
+                        <button
+                          key={opt.value}
+                          onClick={() => group.onChange(opt.value)}
+                          className={cn(
+                            "px-3 py-1 rounded-lg text-xs font-medium transition-all duration-150 border",
+                            group.value === opt.value
+                              ? "bg-[#27B1AE] text-white border-[#27B1AE] shadow-sm dark:bg-[#136F9A] dark:border-[#136F9A]"
+                              : "bg-gray-50 dark:bg-slate-700/60 border-gray-200 dark:border-slate-600 text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:border-[#27B1AE] hover:text-gray-900 dark:hover:text-[#4fc4c1]"
+                          )}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
                   </div>
                 </div>
               ))}
 
-              {/* Reset — only when something is active */}
-              {filterActive && (
-                <button
-                  onClick={resetFilters}
-                  className="ml-auto flex items-center gap-1 text-xs text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                >
-                  <X className="w-3 h-3" />
-                  Reset
-                </button>
-              )}
+                {/* Reset — only when something is active */}
+                {filterActive && (
+                  <button
+                    onClick={resetFilters}
+                    className="ml-auto flex items-center gap-1 text-xs text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                    Reset
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -273,11 +283,11 @@ function SkillTag({ skill, onEdit, onToggle }: { skill: SkillItem; onEdit: () =>
     <span className={cn(
       "inline-flex items-center gap-1 pl-2.5 pr-1 py-1 rounded-full text-xs font-medium border transition-colors",
       skill.isActive
-        ? "bg-blue-50 dark:bg-blue-900/25 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-700"
+        ? "bg-[#e8f7f7] dark:bg-[#27B1AE]/50 text-[#1e9e9b] dark:text-[#4fc4c1] border-[#9ae8e6] dark:border-[#136F9A]/50"
         : "bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-slate-500 border-gray-200 dark:border-slate-600 line-through"
     )}>
       {skill.name}
-      <button onClick={onEdit} title="Edit" className="p-0.5 rounded-full hover:bg-blue-100 dark:hover:bg-blue-800/40 text-blue-400 hover:text-blue-600 dark:hover:text-blue-200 transition-colors">
+      <button onClick={onEdit} title="Edit" className="p-0.5 rounded-full hover:bg-[#e8f7f7] dark:hover:bg-[#136F9A]/20 text-[#27B1AE] hover:text-[#1e9e9b] dark:hover:text-[#4fc4c1] transition-colors">
         <Pencil className="w-2.5 h-2.5" />
       </button>
       <button onClick={onToggle} title={skill.isActive ? "Deactivate" : "Activate"} className="p-0.5 rounded-full hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 transition-colors">
@@ -298,7 +308,7 @@ function RowActions({ onEdit, isActive, onToggle }: { onEdit: () => void; isActi
         </button>
       </Tooltip>
       <Tooltip label={isActive ? "Deactivate" : "Activate"} side="left">
-        <button onClick={onToggle} className="p-1.5 text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+        <button onClick={onToggle} className="p-1.5 text-gray-400 hover:text-[#27B1AE] dark:hover:text-[#4fc4c1] hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
           {isActive ? <ToggleRight className="w-4 h-4 text-green-500" /> : <ToggleLeft className="w-4 h-4" />}
         </button>
       </Tooltip>
@@ -366,7 +376,7 @@ function DepartmentsTab() {
               {rows.length === 0 && <EmptyRow cols={5} message={search ? "No results" : "No items yet"} />}
               {rows.map((d) => (
                 <tr key={d.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-700/30">
-                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{d.name}</td>
+                  <td className="px-4 py-3 font-medium text-sage-600 dark:text-white">{d.name}</td>
                   <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-slate-400">{d.code}</td>
                   <td className="px-4 py-3 text-gray-500 dark:text-slate-400 max-w-xs truncate">{d.description ?? "—"}</td>
                   <td className="px-4 py-3"><ActiveBadge active={d.isActive} /></td>
@@ -467,7 +477,7 @@ function DesignationsTab() {
               {rows.length === 0 && <EmptyRow cols={5} message={search ? "No results" : "No items yet"} />}
               {rows.map((d) => (
                 <tr key={d.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-700/30">
-                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{d.title}</td>
+                  <td className="px-4 py-3 font-medium text-sage-600 dark:text-white">{d.title}</td>
                   <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-slate-400">{d.code}</td>
                   <td className="px-4 py-3 text-gray-500 dark:text-slate-400">{d.grade ?? "—"}</td>
                   <td className="px-4 py-3"><ActiveBadge active={d.isActive} /></td>
@@ -514,8 +524,8 @@ function SkillCategoryRow({ cat, allSkills, onEditCat, onToggleCat, onEditSkill,
       <tr className="hover:bg-gray-50/50 dark:hover:bg-slate-700/30">
         <td className="px-4 py-3">
           <button onClick={() => setExpanded((v) => !v)}
-            className="flex items-center gap-2 font-medium text-gray-900 dark:text-white hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
-            {expanded ? <ChevronDown className="w-3.5 h-3.5 shrink-0 text-primary-500" /> : <ChevronRightIcon className="w-3.5 h-3.5 shrink-0 text-gray-400" />}
+            className="flex items-center gap-2 font-medium text-sage-600 dark:text-white hover:text-[#27B1AE] dark:hover:text-[#4fc4c1] transition-colors">
+            {expanded ? <ChevronDown className="w-3.5 h-3.5 shrink-0 text-[#27B1AE]" /> : <ChevronRightIcon className="w-3.5 h-3.5 shrink-0 text-gray-400" />}
             {cat.name}
           </button>
         </td>
@@ -531,7 +541,7 @@ function SkillCategoryRow({ cat, allSkills, onEditCat, onToggleCat, onEditSkill,
               {catSkills.length === 0 && <span className="text-xs text-gray-400 dark:text-slate-500 italic">No skills yet</span>}
               {catSkills.map((s) => <SkillTag key={s.id} skill={s} onEdit={() => onEditSkill(s)} onToggle={() => onToggleSkill(s)} />)}
               <button onClick={() => onAddSkill(cat.id)}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-dashed border-gray-300 dark:border-slate-600 text-gray-500 dark:text-slate-400 hover:border-primary-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors">
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-dashed border-gray-300 dark:border-slate-600 text-gray-500 dark:text-slate-400 hover:border-[#4fc4c1] hover:text-[#27B1AE] dark:hover:text-[#4fc4c1] transition-colors">
                 <Plus className="w-3 h-3" /> Add skill
               </button>
             </div>
@@ -660,7 +670,7 @@ function SkillsTab() {
                 {profRows.length === 0 && <EmptyRow cols={6} message={profSearch ? "No results" : "No items yet"} />}
                 {profRows.map((p) => (
                   <tr key={p.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-700/30">
-                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{p.level}</td>
+                    <td className="px-4 py-3 font-medium text-sage-600 dark:text-white">{p.level}</td>
                     <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-slate-400">{p.code}</td>
                     <td className="px-4 py-3 text-gray-500 dark:text-slate-400">{p.sortOrder}</td>
                     <td className="px-4 py-3 text-gray-500 dark:text-slate-400">{p.scoreMultiplier}×</td>
@@ -789,7 +799,7 @@ function QualificationsTab() {
               {rows.length === 0 && <EmptyRow cols={6} message={search ? "No results" : "No items yet"} />}
               {rows.map((q) => (
                 <tr key={q.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-700/30">
-                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{q.name}</td>
+                  <td className="px-4 py-3 font-medium text-sage-600 dark:text-white">{q.name}</td>
                   <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-slate-400">{q.code}</td>
                   <td className="px-4 py-3">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-900/25 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700">
@@ -904,7 +914,7 @@ function CertificationsTab() {
               {rows.length === 0 && <EmptyRow cols={7} message={search ? "No results" : "No items yet"} />}
               {rows.map((c) => (
                 <tr key={c.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-700/30">
-                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{c.name}</td>
+                  <td className="px-4 py-3 font-medium text-sage-600 dark:text-white">{c.name}</td>
                   <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-slate-400">{c.code}</td>
                   <td className="px-4 py-3">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-50 dark:bg-violet-900/25 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-700">{c.issuingBody}</span>
@@ -912,7 +922,7 @@ function CertificationsTab() {
                   <td className="px-4 py-3">
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-indigo-50 dark:bg-indigo-900/25 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-700">{c.scoreContribution} pts</span>
                   </td>
-                  <td className="px-4 py-3">{c.hasExpiry ? <Badge variant="warning">Expires</Badge> : <Badge variant="secondary">Lifetime</Badge>}</td>
+                  <td className="px-4 py-3">{c.hasExpiry ? <Badge variant="warning">Expires</Badge> : <Badge>Lifetime</Badge>}</td>
                   <td className="px-4 py-3"><ActiveBadge active={c.isActive} /></td>
                   <td className="px-4 py-3">
                     <RowActions
@@ -999,63 +1009,83 @@ function BpvConfigTab() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div>
-        <div className="flex items-start justify-between mb-4 gap-4">
+      {/* ── BPV Weights white card ── */}
+      <div className="bg-white/60 dark:bg-slate-800/50 backdrop-blur-xl backdrop-saturate-150 rounded-2xl border border-[#dde8f0] dark:border-slate-700 shadow-sm overflow-hidden">
+        {/* Card header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-slate-700">
           <div>
-            <h2 className="text-base font-semibold text-gray-900 dark:text-white">BPV Weight Configuration</h2>
+            <h2 className="text-base font-semibold text-sage-600 dark:text-white">BPV Weight Configuration</h2>
             <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">All weights must sum to 100%.</p>
           </div>
           <Tooltip label="Create new BPV weight version">
-            <button onClick={() => { wForm.reset({ educationPct: "20", experiencePct: "30", orgProfilePct: "15", skillsPct: "25", certsPct: "10", effectiveFrom: new Date().toISOString().split("T")[0], changeReason: "" }); setWModal(true); }}
-              className="w-9 h-9 rounded-xl flex items-center justify-center bg-primary-600 hover:bg-primary-700 text-white transition-all duration-150 active:scale-95 shadow-sm shadow-primary-600/20">
+            <button
+              onClick={() => { wForm.reset({ educationPct: "20", experiencePct: "30", orgProfilePct: "15", skillsPct: "25", certsPct: "10", effectiveFrom: new Date().toISOString().split("T")[0], changeReason: "" }); setWModal(true); }}
+              className="w-9 h-9 rounded-xl flex items-center justify-center bg-[#27B1AE] hover:bg-[#1e9e9b] text-white transition-all duration-150 active:scale-95 shadow-sm"
+            >
               <Plus className="w-4 h-4" />
             </button>
           </Tooltip>
         </div>
 
-        {active ? (
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-4">
-            {[{ label: "Education", val: active.educationPct }, { label: "Experience", val: active.experiencePct }, { label: "Org Profile", val: active.orgProfilePct }, { label: "Skills", val: active.skillsPct }, { label: "Certs", val: active.certsPct }].map((x) => (
-              <Card key={x.label} className="text-center">
-                <p className="text-2xl font-bold text-primary-600 dark:text-primary-400">{x.val}%</p>
-                <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">{x.label}</p>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <div className="p-6 text-center text-sm text-gray-500 dark:text-slate-400 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800 mb-4">
-            No active BPV weight configuration. Create one to enable BPV scoring.
-          </div>
-        )}
+        {/* Stat cards */}
+        <div className="px-5 py-4 border-b border-gray-100 dark:border-slate-700">
+          {active ? (
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              {[
+                { label: "Education",   val: active.educationPct,   icon: GraduationCap, color: "bg-[#27B1AE]" },
+                { label: "Experience",  val: active.experiencePct,  icon: Briefcase,     color: "bg-[#136F9A]" },
+                { label: "Org Profile", val: active.orgProfilePct,  icon: Network,       color: "bg-[#27B1AE]" },
+                { label: "Skills",      val: active.skillsPct,      icon: Star,          color: "bg-[#27B1AE]" },
+                { label: "Certs",       val: active.certsPct,       icon: Award,         color: "bg-[#136F9A]" },
+              ].map((x) => {
+                const Icon = x.icon;
+                return (
+                  <div key={x.label} className="bg-gray-50 dark:bg-slate-700/50 rounded-xl border border-gray-100 dark:border-slate-600/50 p-4 flex flex-col items-center text-center gap-2.5">
+                    <div className={`w-9 h-9 rounded-xl ${x.color} flex items-center justify-center shadow-sm`}>
+                      <Icon className="w-[18px] h-[18px] text-white" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-[#27B1AE] dark:text-[#4fc4c1] leading-none tabular-nums">{x.val}%</p>
+                      <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 font-medium">{x.label}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="p-4 text-center text-sm text-gray-500 dark:text-slate-400 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-200 dark:border-amber-800">
+              No active BPV weight configuration. Create one to enable BPV scoring.
+            </div>
+          )}
+        </div>
 
-        <Card padding="none">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <SortableHeader sort={configTc.sort} onSort={configTc.toggleSort} cols={[
-                { label: "Effective", sortKey: "effectiveFrom" }, { label: "Edu %", sortKey: "educationPct" },
-                { label: "Exp %", sortKey: "experiencePct" }, { label: "Org %", sortKey: "orgProfilePct" },
-                { label: "Skills %", sortKey: "skillsPct" }, { label: "Certs %", sortKey: "certsPct" },
-                { label: "Reason" }, { label: "Status", sortKey: "isActive" },
-              ]} />
-              <tbody className="divide-y divide-gray-50 dark:divide-slate-700/50">
-                {configRows.length === 0 && <EmptyRow cols={8} />}
-                {configRows.map((c) => (
-                  <tr key={c.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-700/30">
-                    <td className="px-4 py-3 text-gray-700 dark:text-slate-300">{new Date(c.effectiveFrom).toLocaleDateString()}</td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-slate-400">{c.educationPct}%</td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-slate-400">{c.experiencePct}%</td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-slate-400">{c.orgProfilePct}%</td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-slate-400">{c.skillsPct}%</td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-slate-400">{c.certsPct}%</td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-slate-400 max-w-xs truncate">{c.changeReason}</td>
-                    <td className="px-4 py-3"><ActiveBadge active={c.isActive} /></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <TableFooter {...configTc} onPageChange={configTc.setPage} />
-        </Card>
+        {/* History table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <SortableHeader sort={configTc.sort} onSort={configTc.toggleSort} cols={[
+              { label: "Effective", sortKey: "effectiveFrom" }, { label: "Edu %", sortKey: "educationPct" },
+              { label: "Exp %", sortKey: "experiencePct" }, { label: "Org %", sortKey: "orgProfilePct" },
+              { label: "Skills %", sortKey: "skillsPct" }, { label: "Certs %", sortKey: "certsPct" },
+              { label: "Reason" }, { label: "Status", sortKey: "isActive" },
+            ]} />
+            <tbody className="divide-y divide-gray-50 dark:divide-slate-700/50">
+              {configRows.length === 0 && <EmptyRow cols={8} />}
+              {configRows.map((c) => (
+                <tr key={c.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-700/30">
+                  <td className="px-4 py-3 text-gray-700 dark:text-slate-300">{new Date(c.effectiveFrom).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 text-gray-500 dark:text-slate-400">{c.educationPct}%</td>
+                  <td className="px-4 py-3 text-gray-500 dark:text-slate-400">{c.experiencePct}%</td>
+                  <td className="px-4 py-3 text-gray-500 dark:text-slate-400">{c.orgProfilePct}%</td>
+                  <td className="px-4 py-3 text-gray-500 dark:text-slate-400">{c.skillsPct}%</td>
+                  <td className="px-4 py-3 text-gray-500 dark:text-slate-400">{c.certsPct}%</td>
+                  <td className="px-4 py-3 text-gray-500 dark:text-slate-400 max-w-xs truncate">{c.changeReason}</td>
+                  <td className="px-4 py-3"><ActiveBadge active={c.isActive} /></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <TableFooter {...configTc} onPageChange={configTc.setPage} />
       </div>
 
       <div>
@@ -1079,7 +1109,7 @@ function BpvConfigTab() {
                   <tr key={b.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-700/30">
                     <td className="px-4 py-3 text-gray-700 dark:text-slate-300">{b.yearsFrom} yrs</td>
                     <td className="px-4 py-3 text-gray-700 dark:text-slate-300">{b.yearsTo} yrs</td>
-                    <td className="px-4 py-3 font-semibold text-primary-600 dark:text-primary-400">{b.scorePoints} pts</td>
+                    <td className="px-4 py-3 font-semibold text-[#136F9A] dark:text-[#4fc4c1]">{b.scorePoints} pts</td>
                     <td className="px-4 py-3"><ActiveBadge active={b.isActive} /></td>
                     <td className="px-4 py-3">
                       <RowActions
@@ -1181,7 +1211,7 @@ function ExperienceTypesTab() {
               {rows.length === 0 && <EmptyRow cols={4} message={search ? "No results" : "No items yet"} />}
               {rows.map((e) => (
                 <tr key={e.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-700/30">
-                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{e.name}</td>
+                  <td className="px-4 py-3 font-medium text-sage-600 dark:text-white">{e.name}</td>
                   <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-slate-400">{e.code}</td>
                   <td className="px-4 py-3"><ActiveBadge active={e.isActive} /></td>
                   <td className="px-4 py-3">
@@ -1270,9 +1300,9 @@ function OrgTypesTab() {
               {rows.length === 0 && <EmptyRow cols={5} message={search ? "No results" : "No items yet"} />}
               {rows.map((o) => (
                 <tr key={o.id} className="hover:bg-gray-50/50 dark:hover:bg-slate-700/30">
-                  <td className="px-4 py-3 font-medium text-gray-900 dark:text-white">{o.name}</td>
+                  <td className="px-4 py-3 font-medium text-sage-600 dark:text-white">{o.name}</td>
                   <td className="px-4 py-3 font-mono text-xs text-gray-500 dark:text-slate-400">{o.code}</td>
-                  <td className="px-4 py-3 font-semibold text-primary-600 dark:text-primary-400">{o.scoreContribution}</td>
+                  <td className="px-4 py-3 font-semibold text-[#136F9A] dark:text-[#4fc4c1]">{o.scoreContribution}</td>
                   <td className="px-4 py-3"><ActiveBadge active={o.isActive} /></td>
                   <td className="px-4 py-3">
                     <RowActions onEdit={() => { form.reset({ name: o.name, code: o.code, scoreContribution: String(o.scoreContribution) }); setModal({ open: true, item: o }); }} isActive={o.isActive} onToggle={() => toggle(o)} />
@@ -1321,20 +1351,27 @@ export default function SettingsPage() {
   return (
     <RoleGuard require="nav:config" redirectTo="/dashboard">
       <div className="flex flex-col gap-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-primary-50 dark:bg-primary-900/30 rounded-xl">
-              <Settings2 className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+        {/* Page header card */}
+        <div className="rounded-2xl border border-[#dde8f0] dark:border-slate-700 bg-white/60 dark:bg-slate-800/50 backdrop-blur-xl backdrop-saturate-150 shadow-sm overflow-hidden">
+          {/* Title row */}
+          <div className="flex items-center justify-between gap-4 px-6 pt-5 pb-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="p-2.5 bg-[#e8f7f7] dark:bg-[#27B1AE]/50 rounded-xl shrink-0">
+                <Settings2 className="w-5 h-5 text-[#27B1AE]" />
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-2xl font-bold text-sage-600 dark:text-white leading-tight">Configuration</h1>
+                <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5 truncate">Manage master data — departments, skills, qualifications, and BPV scoring rules</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Configuration</h1>
-              <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">Manage master data — departments, skills, qualifications, and BPV scoring rules</p>
-            </div>
+            <BackButton href="/dashboard" label="Back" />
           </div>
-          <BackButton href="/dashboard" label="Back" />
-        </div>
 
-        <Tabs tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+          {/* Tabs */}
+          <div className="border-t border-gray-100 dark:border-slate-700 px-6">
+            <Tabs tabs={TABS} activeTab={activeTab} onChange={setActiveTab} className="border-b-0" />
+          </div>
+        </div>
 
         <div className="min-h-0">
           {activeTab === "departments"    && <DepartmentsTab />}

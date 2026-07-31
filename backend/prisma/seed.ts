@@ -1023,13 +1023,12 @@ async function main() {
   for (const demo of demoEmployees) {
     const { emp, qual, exps, skills, certs } = demo;
 
-    // Upsert employee
+    // Upsert employee (managerId set in a second pass once all employees exist)
     await prisma.employee.upsert({
       where: { email: emp.email },
       update: { fullName: emp.fullName, status: emp.status },
       create: {
         ...emp,
-        managerId: managerMap[emp.id],
       },
     });
 
@@ -1096,6 +1095,11 @@ async function main() {
         });
       }
     }
+  }
+
+  // Second pass — assign managers now that every employee row exists
+  for (const [empId, managerId] of Object.entries(managerMap)) {
+    await prisma.employee.update({ where: { id: empId }, data: { managerId } });
   }
 
   console.log(`✓ Demo employees (${demoEmployees.length}) with qualifications, experience, skills, certifications`);

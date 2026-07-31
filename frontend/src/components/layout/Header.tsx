@@ -30,79 +30,87 @@ export function Header() {
     : user?.email?.[0]?.toUpperCase() ?? "U";
 
   return (
-    <header className="h-16 flex items-center justify-end gap-2 px-6 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 shrink-0">
+    <header className="h-14 flex items-center justify-end gap-1.5 px-5 bg-white dark:bg-slate-900 border-b border-[#dde8f0] dark:border-slate-700/80 shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
       {/* Theme toggle */}
       <button
         onClick={toggleTheme}
-        className="p-2 rounded-lg text-gray-400 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
+        className="p-2 rounded-lg text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-slate-700/40 hover:text-gray-700 dark:hover:text-slate-200 transition-colors"
         title={resolvedTheme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
       >
         {resolvedTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
       </button>
 
+      {/* Divider */}
+      <span className="w-px h-5 bg-gray-200 dark:bg-slate-700 mx-1" />
+
       {/* User menu */}
       <div className="relative" ref={ref}>
         <button
           onClick={() => setOpen((v) => !v)}
-          className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+          className="flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-slate-700/40 transition-colors"
         >
-          <div className="w-8 h-8 rounded-full bg-primary-100 dark:bg-primary-900/50 flex items-center justify-center">
-            <span className="text-primary-700 dark:text-primary-400 text-xs font-semibold">{initials}</span>
+          {/* Avatar ring */}
+          <div className="w-8 h-8 rounded-full bg-[#27B1AE] dark:bg-[#1e9e9b] ring-2 ring-[#27B1AE]/20 flex items-center justify-center shadow-sm">
+            <span className="text-white text-xs font-semibold leading-none">{initials}</span>
           </div>
           <div className="text-left hidden sm:block">
-            <p className="text-sm font-medium text-gray-900 dark:text-slate-100 leading-none">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white leading-tight">
               {user?.employee?.fullName ?? user?.email ?? "—"}
             </p>
-            <div className="flex items-center gap-1 mt-0.5">
-              {role && (
-                <span className={cn(
-                  "text-[10px] font-semibold px-1.5 py-0.5 rounded-full leading-none",
-                  ROLE_COLORS[role as UserRole].bg,
-                  ROLE_COLORS[role as UserRole].text,
-                )}>
-                  {ROLE_LABELS[role as UserRole]}
-                </span>
-              )}
-            </div>
+            {role && (
+              <p className="text-[10px] text-gray-500 dark:text-slate-400 font-medium mt-0.5">
+                {ROLE_LABELS[role as UserRole]}
+              </p>
+            )}
           </div>
-          <ChevronDown className={cn("w-4 h-4 text-gray-400 dark:text-slate-500 transition-transform", open && "rotate-180")} />
+          <ChevronDown className={cn("w-3.5 h-3.5 text-gray-400 dark:text-slate-500 transition-transform ml-0.5", open && "rotate-180")} />
         </button>
 
         {open && (
-          <div className="absolute right-0 top-full mt-1 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-gray-200 dark:border-slate-700 py-1 z-50">
-            <div className="px-4 py-2.5 border-b border-gray-100 dark:border-slate-700">
-              <p className="text-xs font-medium text-gray-900 dark:text-slate-100 truncate">
-                {user?.employee?.fullName ?? user?.email}
-              </p>
-              {user?.employee && (
-                <p className="text-xs text-gray-500 dark:text-slate-400 truncate mt-0.5">
-                  {user.employee.designation.title} · {user.employee.department.name}
-                </p>
-              )}
-            </div>
-            <button
-              className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-gray-600 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700"
-              onClick={() => {
-                setOpen(false);
-                if (employeeId) router.push(`/employees/${employeeId}`);
-              }}
-            >
-              <User className="w-4 h-4" /> My Profile
-            </button>
-            {role && (
-              <div className="px-4 py-2 flex items-center gap-2 text-xs text-gray-400 dark:text-slate-500">
-                <Shield className="w-3.5 h-3.5" />
-                <span>{ROLE_LABELS[role as UserRole]}</span>
+          <div className="absolute right-0 top-full mt-1.5 w-58 bg-white dark:bg-slate-800 rounded-2xl shadow-xl shadow-black/8 dark:shadow-black/30 border border-gray-100 dark:border-slate-700 py-1.5 z-50 min-w-[220px]">
+            {/* User info */}
+            <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700/60">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#27B1AE] to-[#136F9A] flex items-center justify-center shrink-0">
+                  <span className="text-white text-xs font-semibold">{initials}</span>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-900 dark:text-slate-100 truncate">
+                    {user?.employee?.fullName ?? user?.email}
+                  </p>
+                  {user?.employee && (
+                    <p className="text-xs text-gray-500 dark:text-slate-400 truncate mt-0.5">
+                      {user.employee.designation.title}
+                    </p>
+                  )}
+                </div>
               </div>
-            )}
-            <button
-              disabled={logoutPending}
-              className="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-60"
-              onClick={() => { setOpen(false); logout(); }}
-            >
-              <LogOut className="w-4 h-4" />
-              {logoutPending ? "Signing out…" : "Sign out"}
-            </button>
+            </div>
+
+            <div className="py-1">
+              <button
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors"
+                onClick={() => { setOpen(false); if (employeeId) router.push(`/employees/${employeeId}`); }}
+              >
+                <div className="w-7 h-7 rounded-lg bg-gray-100 dark:bg-slate-700 flex items-center justify-center shrink-0">
+                  <User className="w-3.5 h-3.5 text-gray-500 dark:text-slate-400" />
+                </div>
+                My Profile
+              </button>
+            </div>
+
+            <div className="border-t border-gray-100 dark:border-slate-700/60 pt-1 pb-0.5">
+              <button
+                disabled={logoutPending}
+                className="w-full flex items-center gap-3 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors disabled:opacity-60"
+                onClick={() => { setOpen(false); logout(); }}
+              >
+                <div className="w-7 h-7 rounded-lg bg-red-50 dark:bg-red-900/20 flex items-center justify-center shrink-0">
+                  <LogOut className="w-3.5 h-3.5 text-red-500 dark:text-red-400" />
+                </div>
+                {logoutPending ? "Signing out…" : "Sign out"}
+              </button>
+            </div>
           </div>
         )}
       </div>

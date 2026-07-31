@@ -6,11 +6,11 @@ Stack: Next.js 15 App Router · TypeScript · Tailwind CSS · TanStack Query v5 
 
 ---
 
-## Design Philosophy — "Cozy Luxury ERP"
+## Design Philosophy — "Modern Enterprise ERP"
 
-The UI must feel warm, polished, and premium — not clinical or corporate.
-Think: tasteful shadows, clean spacing, smooth transitions, elegant typography.
-Reference aesthetic: the Unfold customer list UI (dark sidebar, warm content, rich side-preview panels).
+The UI must feel clean, polished, and professional — inspired by DreamsERP (dreamserp.dreamstechnologies.com).
+Think: gradient icon badges on stat cards, vivid color-coded status badges, section labels in sidebar, gradient primary buttons, and split-screen login.
+Reference: DreamsERP Tailwind template visual language adapted to the brand palette.
 
 ### Core principles
 1. **Warmth over flatness** — use subtle gradients on hero sections, layered card shadows.
@@ -26,23 +26,36 @@ Reference aesthetic: the Unfold customer list UI (dark sidebar, warm content, ri
 ### Tailwind dark mode
 `darkMode: "class"` — the `.dark` class is added to `<html>` by the ThemeProvider.
 
+### Brand palette (hex values — always use both light and dark)
+
+| Token | Hex | Use |
+|---|---|---|
+| Turquoise | `#27B1AE` | Primary accent, buttons, active states |
+| Turquoise dark | `#1e9e9b` | Button hover |
+| Blue | `#136F9A` | Gradient pair, links |
+| Navy | `#2C3E50` | Sidebar background |
+| Pale blue | `#F8FBFD` | Page background (light) |
+| Card border | `#dde8f0` | Card/input borders (light) |
+| Tint | `#e8f7f7` | Icon backgrounds, hover tints (light) |
+
 ### Palette mapping (always use both)
 
 | Role | Light | Dark |
 |---|---|---|
-| Page background | `bg-gray-50` | `dark:bg-slate-900` |
+| Page background | `bg-[#F8FBFD]` | `dark:bg-slate-900` |
 | Card / surface | `bg-white` | `dark:bg-slate-800` |
-| Elevated card | `bg-white` | `dark:bg-slate-800` |
-| Border | `border-gray-200` | `dark:border-slate-700` |
+| Card border | `border-[#dde8f0]` | `dark:border-slate-700/60` |
+| Card shadow | `shadow-[0_2px_12px_-2px_rgba(0,0,0,0.08)]` | `dark:shadow-[0_4px_20px_rgba(0,0,0,0.3)]` |
 | Divider | `divide-gray-100` | `dark:divide-slate-700/60` |
 | Heading text | `text-gray-900` | `dark:text-white` |
 | Body text | `text-gray-700` | `dark:text-slate-300` |
 | Muted text | `text-gray-500` | `dark:text-slate-400` |
 | Very muted | `text-gray-400` | `dark:text-slate-500` |
-| Primary accent | `text-primary-600` / `bg-primary-600` | `dark:text-primary-400` / `dark:bg-primary-500` |
+| Primary accent | `text-[#27B1AE]` / `bg-[#27B1AE]` | `dark:text-[#4fc4c1]` |
+| Primary button | `bg-gradient-to-r from-[#27B1AE] to-[#136F9A]` | same |
 | Hover surface | `hover:bg-gray-50` | `dark:hover:bg-slate-700/40` |
-| Input bg | `bg-white` | `dark:bg-slate-800` |
-| Sidebar | `bg-white` | `dark:bg-slate-900` |
+| Input bg | `bg-white border-[#dde8f0]` | `dark:bg-slate-800 dark:border-slate-600` |
+| Sidebar | `bg-[#2C3E50]` | same (dark by default) |
 
 ### Sidebar footer text (near-invisible risk)
 Use `dark:text-slate-500` (role name) and `dark:text-slate-600` (version) — never `slate-700` or darker.

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -12,100 +13,142 @@ import { useAuth } from "@/hooks/useAuth";
 import type { Action } from "@/lib/permissions";
 
 interface NavItem {
-  label: string;
-  href:  string;
-  icon:  React.ElementType;
-  /** If set, the item is only shown when the user has this permission */
+  label:   string;
+  href:    string;
+  icon:    React.ElementType;
   require?: Action;
+  section?: string; // section label shown above this item when sidebar is expanded
 }
 
-// Dashboard is always visible to everyone
-// "My Profile" is only for EMPLOYEE role (they don't get the full employees list)
 const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard",     href: "/dashboard",     icon: LayoutDashboard },
-  { label: "Employees",     href: "/employees",     icon: Users,          require: "nav:employees" },
-  { label: "Tasks",         href: "/tasks",         icon: ClipboardList,  require: "nav:tasks" },
-  { label: "Time",          href: "/time",          icon: Clock,          require: "nav:time" },
-  { label: "Efficiency",    href: "/efficiency",    icon: TrendingUp,     require: "nav:efficiency" },
-  { label: "Assets",        href: "/assets",        icon: FolderKanban,   require: "nav:assets" },
-  { label: "Rewards",       href: "/rewards",       icon: Gift,           require: "nav:rewards" },
-  { label: "Beneficiaries", href: "/beneficiaries", icon: HeartHandshake, require: "nav:beneficiaries" },
-  { label: "Config",        href: "/settings",      icon: Settings,       require: "nav:config" },
+  { label: "Dashboard",     href: "/dashboard",     icon: LayoutDashboard, section: "MAIN" },
+  { label: "Employees",     href: "/employees",     icon: Users,           require: "nav:employees", section: "HRM" },
+  { label: "Tasks",         href: "/tasks",         icon: ClipboardList,   require: "nav:tasks",         section: "MANAGE" },
+  { label: "Time",          href: "/time",          icon: Clock,           require: "nav:time" },
+  { label: "Efficiency",    href: "/efficiency",    icon: TrendingUp,      require: "nav:efficiency" },
+  { label: "Assets",        href: "/assets",        icon: FolderKanban,    require: "nav:assets" },
+  { label: "Rewards",       href: "/rewards",       icon: Gift,            require: "nav:rewards" },
+  { label: "Beneficiaries", href: "/beneficiaries", icon: HeartHandshake,  require: "nav:beneficiaries" },
+  { label: "Config",        href: "/settings",      icon: Settings,        require: "nav:config", section: "SYSTEM" },
 ];
 
 export function Sidebar() {
-  const pathname    = usePathname();
+  const [expanded, setExpanded] = useState(false);
+  const pathname                = usePathname();
   const { can, role, employeeId } = usePermissions();
-  const { user }   = useAuth();
+  const { user }                = useAuth();
 
-  // Build the visible nav list
   const visibleItems = NAV_ITEMS.filter((item) =>
     item.require ? can(item.require) : true
   );
 
-  // EMPLOYEE gets a "My Profile" link instead of the full Employees list
-  const isEmployee = role === "EMPLOYEE";
+  const isEmployee    = role === "EMPLOYEE";
   const myProfileHref = employeeId ? `/employees/${employeeId}` : "/dashboard";
-
-  const roleName = user?.role?.toLowerCase().replace(/_/g, " ") ?? "";
+  const roleName      = user?.role?.toLowerCase().replace(/_/g, " ") ?? "";
 
   return (
-    <aside className="w-60 shrink-0 flex flex-col h-full bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700">
-      {/* Brand */}
-      <div className="flex items-center gap-2.5 px-5 h-16 border-b border-gray-200 dark:border-slate-700 shrink-0">
-        <div className="w-8 h-8 rounded-lg bg-primary-600 flex items-center justify-center">
-          <span className="text-white text-xs font-bold">HR</span>
+    <aside
+      onMouseEnter={() => setExpanded(true)}
+      onMouseLeave={() => setExpanded(false)}
+      className={cn(
+        "fixed left-0 top-0 z-40 flex flex-col h-full",
+        "bg-[#2C3E50]",
+        "transition-[width] duration-200 ease-in-out overflow-hidden",
+        expanded ? "w-60 shadow-2xl shadow-black/50" : "w-16",
+      )}
+    >
+      {/* ── Brand ─────────────────────────────────────────────────── */}
+      <div className={cn(
+        "flex items-center h-16 shrink-0 border-b border-white/10",
+        "transition-[padding] duration-200",
+        expanded ? "px-5 gap-3" : "justify-center px-0",
+      )}>
+        {/* Logo mark */}
+        <div className="w-8 h-8 rounded-lg bg-[#27B1AE] flex items-center justify-center shrink-0 shadow-lg shadow-[#27B1AE]/30">
+          <span className="text-white text-xs font-bold tracking-tight">HR</span>
         </div>
-        <span className="text-sm font-semibold text-gray-900 dark:text-slate-100 tracking-tight">HRMS</span>
+        {/* Logo text */}
+        <div className={cn(
+          "min-w-0 transition-[opacity,max-width] duration-150",
+          expanded ? "opacity-100 max-w-xs delay-75" : "opacity-0 max-w-0 overflow-hidden",
+        )}>
+          <span className="text-white text-sm font-semibold tracking-tight whitespace-nowrap">HRMS</span>
+          <p className="text-[10px] text-slate-400/60 whitespace-nowrap">Human Resources</p>
+        </div>
       </div>
 
-      {/* Nav */}
-      <nav className="flex-1 py-4 px-3 space-y-0.5 overflow-y-auto">
-        {/* My Profile — EMPLOYEE only */}
+      {/* ── Nav ───────────────────────────────────────────────────── */}
+      <nav className={cn(
+        "flex-1 py-4 space-y-0.5 overflow-y-auto overflow-x-hidden",
+        "transition-[padding] duration-200",
+        expanded ? "px-3" : "px-2",
+      )}>
         {isEmployee && (
           <NavLink
             href={myProfileHref}
             label="My Profile"
             icon={UserCircle}
             pathname={pathname}
+            expanded={expanded}
             matchExact
           />
         )}
-
         {visibleItems.map((item) => (
-          <NavLink
-            key={item.href}
-            href={item.href}
-            label={item.label}
-            icon={item.icon}
-            pathname={pathname}
-          />
+          <div key={item.href}>
+            {/* Section label — only shown when expanded */}
+            {item.section && (
+              <div className={cn(
+                "px-3 pt-4 pb-1 transition-[opacity,max-height] duration-150 overflow-hidden",
+                expanded ? "opacity-100 max-h-8 delay-75" : "opacity-0 max-h-0",
+              )}>
+                <p className="text-[10px] font-bold tracking-widest text-white/25 uppercase select-none whitespace-nowrap">
+                  {item.section}
+                </p>
+              </div>
+            )}
+            <NavLink
+              href={item.href}
+              label={item.label}
+              icon={item.icon}
+              pathname={pathname}
+              expanded={expanded}
+            />
+          </div>
         ))}
       </nav>
 
-      {/* Footer — shows current user's role */}
-      <div className="px-5 py-3 border-t border-gray-200 dark:border-slate-700">
-        <p className="text-[10px] text-gray-400 dark:text-slate-500 capitalize">{roleName}</p>
-        <p className="text-[10px] text-gray-300 dark:text-slate-600">HRMS v1.0.0</p>
+      {/* ── Footer ────────────────────────────────────────────────── */}
+      <div className={cn(
+        "shrink-0 border-t border-white/10",
+        "transition-[padding] duration-200",
+        expanded ? "px-5 py-3.5" : "px-0 py-3.5 flex justify-center",
+      )}>
+        {expanded ? (
+          <div className={cn(
+            "transition-opacity duration-150",
+            expanded ? "opacity-100 delay-75" : "opacity-0",
+          )}>
+            <p className="text-xs text-slate-200/80 capitalize font-medium">{roleName}</p>
+            <p className="text-[10px] text-slate-400/50 mt-0.5">HRMS v1.0.0</p>
+          </div>
+        ) : (
+          <div
+            className="w-2 h-2 rounded-full bg-emerald-400"
+            title={roleName}
+          />
+        )}
       </div>
     </aside>
   );
 }
 
-// ── NavLink helper ─────────────────────────────────────────────────────────────
+// ── NavLink ────────────────────────────────────────────────────────────────────
 
 function NavLink({
-  href,
-  label,
-  icon: Icon,
-  pathname,
-  matchExact = false,
+  href, label, icon: Icon, pathname, expanded, matchExact = false,
 }: {
-  href: string;
-  label: string;
-  icon: React.ElementType;
-  pathname: string;
-  matchExact?: boolean;
+  href: string; label: string; icon: React.ElementType;
+  pathname: string; expanded: boolean; matchExact?: boolean;
 }) {
   const active = matchExact
     ? pathname === href
@@ -114,21 +157,40 @@ function NavLink({
   return (
     <Link
       href={href}
+      title={expanded ? undefined : label}
       className={cn(
-        "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors group",
+        "flex items-center py-2.5 rounded-xl text-sm font-medium group relative",
+        "transition-all duration-150",
+        expanded ? "px-3 gap-3" : "justify-center px-2",
         active
-          ? "bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400"
-          : "text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-slate-100"
+          ? "bg-gradient-to-r from-[#27B1AE]/25 to-[#27B1AE]/5 text-[#4fc4c1]"
+          : "text-slate-400/70 hover:bg-white/[0.08] hover:text-slate-200",
       )}
     >
+      {/* Active left border accent */}
+      {active && expanded && (
+        <span className="absolute left-0 top-1 bottom-1 w-0.5 rounded-full bg-[#27B1AE]" />
+      )}
+      {/* Icon */}
       <Icon className={cn(
-        "w-4 h-4 shrink-0",
+        "w-[18px] h-[18px] shrink-0 transition-colors",
         active
-          ? "text-primary-600 dark:text-primary-400"
-          : "text-gray-400 dark:text-slate-500 group-hover:text-gray-600 dark:group-hover:text-slate-300"
+          ? "text-[#4fc4c1]"
+          : "text-slate-400/50 group-hover:text-slate-200",
       )} />
-      <span className="flex-1">{label}</span>
-      {active && <span className="w-1.5 h-1.5 rounded-full bg-primary-600 dark:bg-primary-400" />}
+
+      {/* Label */}
+      <span className={cn(
+        "flex-1 whitespace-nowrap transition-[opacity,max-width] duration-150 overflow-hidden",
+        expanded ? "opacity-100 max-w-xs delay-75" : "opacity-0 max-w-0",
+      )}>
+        {label}
+      </span>
+
+      {/* Active indicator dot */}
+      {active && expanded && (
+        <span className="w-1.5 h-1.5 rounded-full bg-[#4fc4c1] shrink-0" />
+      )}
     </Link>
   );
 }

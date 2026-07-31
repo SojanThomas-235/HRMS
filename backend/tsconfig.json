@@ -18,7 +18,7 @@
       "@hrms/validators": ["../packages/validators/src/index.ts"],
       "@hrms/utils": ["../packages/utils/src/index.ts"]
     }
-  },
+  }, 
   "include": ["src/**/*", "prisma/**/*"],
   "exclude": ["node_modules", "dist"]
 }

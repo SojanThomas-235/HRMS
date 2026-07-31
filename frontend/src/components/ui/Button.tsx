@@ -15,15 +15,15 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<Variant, string> = {
   primary:
-    "bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800 dark:bg-primary-500 dark:hover:bg-primary-600 focus:ring-primary-500",
+    "bg-gradient-to-r from-[#27B1AE] to-[#136F9A] text-white hover:from-[#1e9e9b] hover:to-[#0e5a7d] active:from-[#167b79] active:to-[#0a4560] shadow-sm shadow-[#27B1AE]/25 hover:shadow-md hover:shadow-[#27B1AE]/30 focus:ring-[#27B1AE]",
   secondary:
-    "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-600 focus:ring-gray-400",
+    "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-slate-700/80 dark:text-slate-200 dark:hover:bg-slate-600 border border-gray-200 dark:border-slate-600/50 focus:ring-gray-400",
   ghost:
     "bg-transparent text-gray-600 hover:bg-gray-100 dark:text-slate-300 dark:hover:bg-slate-800 focus:ring-gray-400",
   danger:
-    "bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 focus:ring-red-500",
+    "bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 shadow-sm shadow-red-500/20 focus:ring-red-500",
   outline:
-    "border border-gray-300 dark:border-slate-600 bg-transparent text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-800 focus:ring-gray-400",
+    "border border-[#dde8f0] dark:border-slate-600 bg-transparent text-gray-700 dark:text-slate-300 hover:bg-[#f0f8f8] dark:hover:bg-slate-800 focus:ring-[#27B1AE]",
 };
 
 const sizes: Record<Size, string> = {
@@ -38,7 +38,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       ref={ref}
       disabled={disabled ?? loading}
       className={cn(
-        "inline-flex items-center justify-center font-medium rounded-lg transition-colors",
+        "inline-flex items-center justify-center font-semibold rounded-xl transition-all duration-150",
         "focus:outline-none focus:ring-2 focus:ring-offset-2 dark:focus:ring-offset-slate-900",
         "disabled:opacity-50 disabled:cursor-not-allowed",
         variants[variant],

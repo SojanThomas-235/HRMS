@@ -280,7 +280,11 @@ export async function updateQualification(employeeId: string, qualId: string, da
   await ensureEmployeeExists(employeeId);
   const qual = await prisma.employeeQualification.update({
     where: { id: qualId, employeeId },
-    data: { institution: data.institution, yearOfCompletion: data.yearOfCompletion, grade: data.grade },
+    data: {
+      ...(data.institution      !== undefined && { institution:      data.institution }),
+      ...(data.yearOfCompletion !== undefined && { yearOfCompletion: data.yearOfCompletion }),
+      ...(data.grade            !== undefined && { grade:            data.grade }),
+    },
     include: { qualificationType: true },
   });
   await calculateBpv(employeeId, actorId, "QUALIFICATION_UPDATED");
@@ -399,7 +403,10 @@ export async function updateSkill(employeeId: string, skillId: string, data: Upd
   await ensureEmployeeExists(employeeId);
   const skill = await prisma.employeeSkill.update({
     where: { id: skillId, employeeId },
-    data: { proficiencyLevelId: data.proficiencyLevelId, yearsOfExperience: data.yearsOfExperience },
+    data: {
+      ...(data.proficiencyLevelId !== undefined && { proficiencyLevelId: data.proficiencyLevelId }),
+      ...(data.yearsOfExperience  !== undefined && { yearsOfExperience:  data.yearsOfExperience }),
+    },
     include: { skill: { include: { category: true } }, proficiencyLevel: true },
   });
   await calculateBpv(employeeId, actorId, "SKILL_UPDATED");
