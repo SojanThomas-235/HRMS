@@ -13,22 +13,23 @@ import { useAuth } from "@/hooks/useAuth";
 import type { Action } from "@/lib/permissions";
 
 interface NavItem {
-  label: string;
-  href:  string;
-  icon:  React.ElementType;
+  label:   string;
+  href:    string;
+  icon:    React.ElementType;
   require?: Action;
+  section?: string; // section label shown above this item when sidebar is expanded
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: "Dashboard",     href: "/dashboard",     icon: LayoutDashboard },
-  { label: "Employees",     href: "/employees",     icon: Users,          require: "nav:employees" },
-  { label: "Tasks",         href: "/tasks",         icon: ClipboardList,  require: "nav:tasks" },
-  { label: "Time",          href: "/time",          icon: Clock,          require: "nav:time" },
-  { label: "Efficiency",    href: "/efficiency",    icon: TrendingUp,     require: "nav:efficiency" },
-  { label: "Assets",        href: "/assets",        icon: FolderKanban,   require: "nav:assets" },
-  { label: "Rewards",       href: "/rewards",       icon: Gift,           require: "nav:rewards" },
-  { label: "Beneficiaries", href: "/beneficiaries", icon: HeartHandshake, require: "nav:beneficiaries" },
-  { label: "Config",        href: "/settings",      icon: Settings,       require: "nav:config" },
+  { label: "Dashboard",     href: "/dashboard",     icon: LayoutDashboard, section: "MAIN" },
+  { label: "Employees",     href: "/employees",     icon: Users,           require: "nav:employees", section: "HRM" },
+  { label: "Tasks",         href: "/tasks",         icon: ClipboardList,   require: "nav:tasks",         section: "MANAGE" },
+  { label: "Time",          href: "/time",          icon: Clock,           require: "nav:time" },
+  { label: "Efficiency",    href: "/efficiency",    icon: TrendingUp,      require: "nav:efficiency" },
+  { label: "Assets",        href: "/assets",        icon: FolderKanban,    require: "nav:assets" },
+  { label: "Rewards",       href: "/rewards",       icon: Gift,            require: "nav:rewards" },
+  { label: "Beneficiaries", href: "/beneficiaries", icon: HeartHandshake,  require: "nav:beneficiaries" },
+  { label: "Config",        href: "/settings",      icon: Settings,        require: "nav:config", section: "SYSTEM" },
 ];
 
 export function Sidebar() {
@@ -63,7 +64,7 @@ export function Sidebar() {
         expanded ? "px-5 gap-3" : "justify-center px-0",
       )}>
         {/* Logo mark */}
-        <div className="w-8 h-8 rounded-lg bg-[#f9701a] flex items-center justify-center shrink-0 shadow-lg shadow-[#f9701a]/30">
+        <div className="w-8 h-8 rounded-lg bg-[#27B1AE] flex items-center justify-center shrink-0 shadow-lg shadow-[#27B1AE]/30">
           <span className="text-white text-xs font-bold tracking-tight">HR</span>
         </div>
         {/* Logo text */}
@@ -93,14 +94,26 @@ export function Sidebar() {
           />
         )}
         {visibleItems.map((item) => (
-          <NavLink
-            key={item.href}
-            href={item.href}
-            label={item.label}
-            icon={item.icon}
-            pathname={pathname}
-            expanded={expanded}
-          />
+          <div key={item.href}>
+            {/* Section label — only shown when expanded */}
+            {item.section && (
+              <div className={cn(
+                "px-3 pt-4 pb-1 transition-[opacity,max-height] duration-150 overflow-hidden",
+                expanded ? "opacity-100 max-h-8 delay-75" : "opacity-0 max-h-0",
+              )}>
+                <p className="text-[10px] font-bold tracking-widest text-white/25 uppercase select-none whitespace-nowrap">
+                  {item.section}
+                </p>
+              </div>
+            )}
+            <NavLink
+              href={item.href}
+              label={item.label}
+              icon={item.icon}
+              pathname={pathname}
+              expanded={expanded}
+            />
+          </div>
         ))}
       </nav>
 
@@ -146,19 +159,23 @@ function NavLink({
       href={href}
       title={expanded ? undefined : label}
       className={cn(
-        "flex items-center py-2.5 rounded-xl text-sm font-medium group",
+        "flex items-center py-2.5 rounded-xl text-sm font-medium group relative",
         "transition-all duration-150",
         expanded ? "px-3 gap-3" : "justify-center px-2",
         active
-          ? "bg-[#f9701a]/20 text-[#fdba74]"
+          ? "bg-gradient-to-r from-[#27B1AE]/25 to-[#27B1AE]/5 text-[#4fc4c1]"
           : "text-slate-400/70 hover:bg-white/[0.08] hover:text-slate-200",
       )}
     >
+      {/* Active left border accent */}
+      {active && expanded && (
+        <span className="absolute left-0 top-1 bottom-1 w-0.5 rounded-full bg-[#27B1AE]" />
+      )}
       {/* Icon */}
       <Icon className={cn(
         "w-[18px] h-[18px] shrink-0 transition-colors",
         active
-          ? "text-[#fdba74]"
+          ? "text-[#4fc4c1]"
           : "text-slate-400/50 group-hover:text-slate-200",
       )} />
 
@@ -172,7 +189,7 @@ function NavLink({
 
       {/* Active indicator dot */}
       {active && expanded && (
-        <span className="w-1.5 h-1.5 rounded-full bg-[#fdba74] shrink-0" />
+        <span className="w-1.5 h-1.5 rounded-full bg-[#4fc4c1] shrink-0" />
       )}
     </Link>
   );

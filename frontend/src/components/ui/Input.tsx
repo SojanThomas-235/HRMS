@@ -21,7 +21,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           "block w-full rounded-lg border text-sm transition-colors",
           "bg-white dark:bg-slate-800 text-gray-900 dark:text-slate-100",
           "placeholder:text-gray-400 dark:placeholder:text-slate-500",
-          "focus:outline-none focus:ring-2 focus:ring-[#f9701a] focus:border-transparent",
+          "focus:outline-none focus:ring-2 focus:ring-[#27B1AE] focus:border-transparent",
           "disabled:opacity-50 disabled:cursor-not-allowed",
           error
             ? "border-red-400 dark:border-red-500 bg-red-50 dark:bg-red-900/10"

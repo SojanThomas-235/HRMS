@@ -54,18 +54,18 @@ function Section({ step, icon: Icon, title, subtitle, children }: {
   step: number; icon: React.ElementType; title: string; subtitle: string; children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
+    <div className="bg-white/60 dark:bg-slate-800/50 backdrop-blur-xl backdrop-saturate-150 rounded-xl border border-gray-200 dark:border-slate-700 overflow-hidden">
       <div className="flex items-center gap-4 px-6 py-4 border-b border-gray-100 dark:border-slate-700/70">
         <div className="relative shrink-0">
-          <div className="w-10 h-10 rounded-xl bg-[#fff7ed] dark:bg-[#7c2f13]/30 flex items-center justify-center">
-            <Icon className="w-5 h-5 text-[#f9701a] dark:text-[#fb8f4a]" />
+          <div className="w-10 h-10 rounded-xl bg-[#e8f7f7] dark:bg-[#27B1AE]/30 flex items-center justify-center">
+            <Icon className="w-5 h-5 text-[#27B1AE] dark:text-[#4fc4c1]" />
           </div>
-          <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#f9701a] text-white text-[9px] font-bold flex items-center justify-center leading-none">
+          <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#27B1AE] text-white text-[9px] font-bold flex items-center justify-center leading-none">
             {step}
           </span>
         </div>
         <div>
-          <p className="font-semibold text-sm text-gray-900 dark:text-white">{title}</p>
+          <p className="font-semibold text-sm text-sage-600 dark:text-white">{title}</p>
           <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">{subtitle}</p>
         </div>
       </div>
@@ -219,8 +219,8 @@ export default function NewEmployeePage() {
 
   const addBtn = cn(
     "w-9 h-9 shrink-0 rounded-lg flex items-center justify-center",
-    "bg-[#f9701a] hover:bg-[#c2440e] text-white",
-    "transition-all duration-150 active:scale-95 shadow-sm shadow-[#f9701a]/20"
+    "bg-[#27B1AE] hover:bg-[#1e9e9b] text-white",
+    "transition-all duration-150 active:scale-95 shadow-sm shadow-[#27B1AE]/20"
   );
 
   return (
@@ -233,17 +233,17 @@ export default function NewEmployeePage() {
         </div>
 
         {/* Hero banner */}
-        <div className="relative overflow-hidden bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 px-6 py-5">
+        <div className="relative overflow-hidden bg-white/60 dark:bg-slate-800/50 backdrop-blur-xl backdrop-saturate-150 rounded-xl border border-gray-200 dark:border-slate-700 px-6 py-5">
           {/* Decorative gradient orb */}
-          <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-[#f9701a]/5 dark:bg-[#fb8f4a]/5" />
-          <div className="absolute -right-4 -bottom-8 w-32 h-32 rounded-full bg-[#f9701a]/5 dark:bg-[#fb8f4a]/5" />
+          <div className="absolute -right-12 -top-12 w-48 h-48 rounded-full bg-[#27B1AE]/5 dark:bg-[#4fc4c1]/5" />
+          <div className="absolute -right-4 -bottom-8 w-32 h-32 rounded-full bg-[#27B1AE]/5 dark:bg-[#4fc4c1]/5" />
 
           <div className="relative flex items-center gap-5">
-            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#f9701a] to-[#f9701a] flex items-center justify-center shadow-lg shadow-[#f9701a]/25 shrink-0">
+            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-[#27B1AE] to-[#27B1AE] flex items-center justify-center shadow-lg shadow-[#27B1AE]/25 shrink-0">
               <UserPlus className="w-7 h-7 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-gray-900 dark:text-white">Add New Employee</h1>
+              <h1 className="text-lg font-bold text-sage-600 dark:text-white">Add New Employee</h1>
               <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">
                 Fill in the details below to onboard a new team member. Fields marked <span className="text-red-500">*</span> are required.
               </p>

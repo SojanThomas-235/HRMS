@@ -41,7 +41,18 @@
       "Bash(awk 'NR==636,NR==793' \"src/app/\\(dashboard\\)/employees/page.tsx\")",
       "Bash(tail -80 /tmp/hrms_frontend.log | head -60)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3001/employees)",
-      "Bash(curl -s -o /dev/null -w \"notfound-check: %{http_code}\\\\n\" http://localhost:3001/dashboard)"
+      "Bash(curl -s -o /dev/null -w \"notfound-check: %{http_code}\\\\n\" http://localhost:3001/dashboard)",
+      "Bash(curl -s -o /dev/null -w \"employees: %{http_code}\\\\n\" http://localhost:3001/employees)",
+      "Bash(curl -s \"http://localhost:3001/_next/static/css/app/layout.css?v=1785178513390\" -o /tmp/app.css)",
+      "Bash(awk -F: '{sum+=$2} END{print sum}')",
+      "Bash(sed -i '' 's/bg-\\\\[#F8FBFD\\\\] dark:bg-slate-900/bg-cream-100 dark:bg-slate-900/g' \"app/\\(dashboard\\)/layout.tsx\")",
+      "Bash(sed -i '' 's/bg-gray-50 dark:bg-slate-900/bg-cream-100 dark:bg-slate-900/g' \"app/\\(auth\\)/login/page.tsx\" app/not-found.tsx)",
+      "Bash(curl -s -o /dev/null -w \"login: %{http_code}\\\\n\" http://localhost:3001/login)",
+      "Bash(grep -c \"backdrop-blur-xl\\\\|eee0cc\" /tmp/app.css)",
+      "Bash(grep -o \"backdrop-blur-xl[^;]*\" /tmp/app.css | head -3 *)",
+      "Bash(grep -n \"bg-cream-100\" \"/Users/pragadhish/Desktop/My_Files/Product_Dev/HRMS_PROD/HRMS/HRMS/frontend/src/app/\\(auth\\)/login/page.tsx\" *)",
+      "Bash(grep -o \"\\\\-\\\\-tw-bg-opacity[^}]*eee0cc[^}]*\" /tmp/app.css | head -2 *)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

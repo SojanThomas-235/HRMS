@@ -86,13 +86,13 @@ export default function EmployeeDetailPage() {
       </div>
 
       {/* Header card */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
+      <div className="bg-white/60 dark:bg-slate-800/50 backdrop-blur-xl backdrop-saturate-150 rounded-xl border border-gray-200 dark:border-slate-700 p-6">
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-4">
             <Avatar name={emp.fullName} size="lg" />
             <div>
               <div className="flex items-center gap-2 flex-wrap">
-                <h1 className="text-xl font-bold text-gray-900 dark:text-white">{emp.fullName}</h1>
+                <h1 className="text-xl font-bold text-sage-600 dark:text-white">{emp.fullName}</h1>
                 <Badge variant={statusVariant(emp.status)} dot>
                   {emp.status === "ON_NOTICE" ? "On Notice" : emp.status.charAt(0) + emp.status.slice(1).toLowerCase()}
                 </Badge>
@@ -168,7 +168,7 @@ function OverviewTab({ emp }: { emp: EmployeeDetail }) {
               <CardDivider />
               <div className="flex justify-between items-center font-semibold">
                 <span className="text-gray-700 dark:text-slate-300">Total BPV</span>
-                <span className="text-lg text-gray-900 dark:text-white">{emp.bpvScores[0].score.toFixed(1)}</span>
+                <span className="text-lg text-sage-600 dark:text-white">{emp.bpvScores[0].score.toFixed(1)}</span>
               </div>
             </div>
           ) : (
@@ -427,7 +427,7 @@ function ExpTab({ id, emp, canWrite }: { id: string; emp: EmployeeDetail; canWri
             <div key={ex.id} className="p-4 rounded-lg bg-gray-50 dark:bg-slate-700/40 border border-gray-100 dark:border-slate-700">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{ex.organizationName}</p>
+                  <p className="font-medium text-sm text-sage-600 dark:text-white truncate">{ex.organizationName}</p>
                   <p className="text-xs text-gray-500 dark:text-slate-400">{ex.designationHeld} · {ex.organizationType.name}</p>
                   <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
                     {fmtDate(ex.startDate)} → {ex.isCurrent ? "Present" : ex.endDate ? fmtDate(ex.endDate) : "—"}
@@ -561,7 +561,7 @@ function SkillTab({ id, emp, canWrite }: { id: string; emp: EmployeeDetail; canW
           {filtered.map((s) => (
             <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-slate-700/40 border border-gray-100 dark:border-slate-700">
               <div>
-                <p className="font-medium text-sm text-gray-900 dark:text-white">{s.skill.name}</p>
+                <p className="font-medium text-sm text-sage-600 dark:text-white">{s.skill.name}</p>
                 <p className="text-xs text-gray-400 dark:text-slate-500">{s.skill.category.name} · {s.yearsOfExperience} yr{s.yearsOfExperience !== 1 ? "s" : ""}</p>
               </div>
               <div className="flex items-center gap-2 shrink-0">
@@ -711,7 +711,7 @@ function CertTab({ id, emp, canWrite }: { id: string; emp: EmployeeDetail; canWr
             <div key={c.id} className="p-4 rounded-lg bg-gray-50 dark:bg-slate-700/40 border border-gray-100 dark:border-slate-700">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-sm text-gray-900 dark:text-white truncate">{c.certification.name}</p>
+                  <p className="font-medium text-sm text-sage-600 dark:text-white truncate">{c.certification.name}</p>
                   <p className="text-xs text-gray-500 dark:text-slate-400">{c.certification.issuingBody}</p>
                   <p className="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
                     Issued: {fmtDate(c.issueDate)}
@@ -913,7 +913,7 @@ function SubCard({ title, icon, onAdd, search, onSearch, children }: {
               <Tooltip label={`Add ${title.toLowerCase()}`}>
                 <button
                   onClick={onAdd}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center bg-[#f9701a] hover:bg-[#c2440e] text-white transition-all duration-150 active:scale-95 shadow-sm shadow-[#f9701a]/20"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center bg-[#27B1AE] hover:bg-[#1e9e9b] text-white transition-all duration-150 active:scale-95 shadow-sm shadow-[#27B1AE]/20"
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>
@@ -928,7 +928,7 @@ function SubCard({ title, icon, onAdd, search, onSearch, children }: {
             >
               {/* Animated search input */}
               <div className={cn(
-                "flex items-center gap-1.5 rounded-lg border bg-white dark:bg-slate-800 transition-all duration-200 overflow-hidden",
+                "flex items-center gap-1.5 rounded-lg border bg-white/60 dark:bg-slate-800/50 backdrop-blur-xl backdrop-saturate-150 transition-all duration-200 overflow-hidden",
                 searchOpen
                   ? "w-44 px-2.5 py-1.5 border-gray-200 dark:border-slate-600 shadow-sm"
                   : "w-0 border-transparent opacity-0 pointer-events-none"
@@ -955,7 +955,7 @@ function SubCard({ title, icon, onAdd, search, onSearch, children }: {
                 className={cn(
                   "w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 active:scale-95",
                   searchOpen || search
-                    ? "bg-[#fff7ed] dark:bg-[#7c2f13]/30 text-[#f9701a] dark:text-[#fb8f4a]"
+                    ? "bg-[#e8f7f7] dark:bg-[#27B1AE]/20 text-[#27B1AE] dark:text-[#4fc4c1]"
                     : "text-gray-400 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700"
                 )}
               >
@@ -985,7 +985,7 @@ function InfoItem({ icon, label, value }: { icon: React.ReactNode; label: string
       <span className="text-gray-400 dark:text-slate-500 mt-0.5 shrink-0">{icon}</span>
       <div>
         <p className="text-xs text-gray-400 dark:text-slate-500">{label}</p>
-        <p className="text-sm font-medium text-gray-900 dark:text-white break-all">{value}</p>
+        <p className="text-sm font-medium text-sage-600 dark:text-white break-all">{value}</p>
       </div>
     </div>
   );
@@ -995,7 +995,7 @@ function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div>
       <p className="text-xs text-gray-400 dark:text-slate-500">{label}</p>
-      <p className="text-sm font-medium text-gray-900 dark:text-white">{value}</p>
+      <p className="text-sm font-medium text-sage-600 dark:text-white">{value}</p>
     </div>
   );
 }
@@ -1022,7 +1022,7 @@ function DetailSkeleton() {
   return (
     <div className="flex flex-col gap-6">
       <div className="h-5 w-48 bg-gray-200 dark:bg-slate-700 rounded animate-pulse" />
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-gray-200 dark:border-slate-700 p-6 space-y-4">
+      <div className="bg-white/60 dark:bg-slate-800/50 backdrop-blur-xl backdrop-saturate-150 rounded-xl border border-gray-200 dark:border-slate-700 p-6 space-y-4">
         <div className="flex gap-4">
           <div className="w-16 h-16 rounded-full bg-gray-200 dark:bg-slate-700 animate-pulse" />
           <div className="space-y-2">

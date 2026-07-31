@@ -106,8 +106,8 @@ function FilterChip({
         className={cn(
           "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all duration-150",
           active
-            ? "border-[#f9701a] dark:border-[#ea5a10] bg-[#f9701a] dark:bg-[#ea5a10]/20 text-white dark:text-[#fb8f4a]"
-            : "border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:border-[#f9701a]/40 dark:hover:border-slate-500 hover:bg-gray-50 dark:hover:bg-slate-700/40",
+            ? "border-[#27B1AE] dark:border-[#1e9e9b] bg-[#27B1AE] dark:bg-[#1e9e9b]/20 text-white dark:text-[#4fc4c1]"
+            : "border-gray-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-600 dark:text-slate-300 hover:border-[#27B1AE]/40 dark:hover:border-slate-500 hover:bg-gray-50 dark:hover:bg-slate-700/40",
         )}
       >
         {current}
@@ -123,7 +123,7 @@ function FilterChip({
               className={cn(
                 "w-full flex items-center justify-between px-3 py-2 text-sm transition-colors",
                 value === opt.value
-                  ? "text-[#f9701a] dark:text-[#fb8f4a] bg-[#fff7ed] dark:bg-[#7c2f13]/20 font-semibold"
+                  ? "text-[#27B1AE] dark:text-[#4fc4c1] bg-[#e8f7f7] dark:bg-[#27B1AE]/20 font-semibold"
                   : "text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50",
               )}
             >
@@ -186,7 +186,7 @@ function ExportMenu({ onExportPdf, onExportExcel }: { onExportPdf: () => void; o
 
 function ViewToggle({ view, onChange }: { view: "list" | "grid"; onChange: (v: "list" | "grid") => void }) {
   const base = "p-1.5 rounded-lg transition-all duration-150";
-  const active = "bg-white dark:bg-slate-800 text-primary-600 dark:text-primary-400 shadow-sm";
+  const active = "bg-white dark:bg-slate-700 text-[#27B1AE] dark:text-[#4fc4c1] shadow-sm";
   const idle = "text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300";
   return (
     <div className="flex items-center gap-0.5 p-0.5 rounded-xl bg-gray-100 dark:bg-slate-900/50 shrink-0">
@@ -379,7 +379,7 @@ function EmployeePreview({
           <div className="mt-3 flex items-center gap-2 flex-wrap justify-center">
             <Badge variant={statusVariant(emp.status)} dot>{statusLabel(emp.status)}</Badge>
             {emp.designation.grade && (
-              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-[#fff7ed] dark:bg-[#7c2f13]/30 text-[#f9701a] dark:text-[#fdba74] border border-[#fed7aa] dark:border-[#f9701a]">
+              <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-[#e8f7f7] dark:bg-[#27B1AE]/30 text-[#27B1AE] dark:text-[#d6a683] border border-[#e6c6ac] dark:border-[#27B1AE]">
                 Grade {emp.designation.grade}
               </span>
             )}
@@ -561,7 +561,7 @@ export default function EmployeesPage() {
           </span>
         )}
         {selectedIds.size > 0 && (
-          <span className="text-xs font-medium text-[#ea5a10] dark:text-[#fb8f4a] shrink-0">
+          <span className="text-xs font-medium text-[#1e9e9b] dark:text-[#4fc4c1] shrink-0">
             {selectedIds.size} selected
           </span>
         )}
@@ -648,7 +648,7 @@ export default function EmployeesPage() {
                         checked={allSelected}
                         ref={(el) => { if (el) el.indeterminate = someSelected; }}
                         onChange={toggleAll}
-                        className="w-4 h-4 rounded border-gray-300 dark:border-slate-600 accent-[#ea5a10] cursor-pointer"
+                        className="w-4 h-4 rounded border-gray-300 dark:border-slate-600 accent-[#1e9e9b] cursor-pointer"
                       />
                     </th>
                     {[
@@ -681,7 +681,7 @@ export default function EmployeesPage() {
                         className={cn(
                           "transition-all duration-150 cursor-pointer",
                           isSelected
-                            ? "bg-[#ea5a10] dark:bg-[#ea5a10] shadow-[inset_4px_0_0] shadow-[#fb8f4a]"
+                            ? "bg-[#1e9e9b] dark:bg-[#1e9e9b] shadow-[inset_4px_0_0] shadow-[#4fc4c1]"
                             : "hover:bg-gray-50/80 dark:hover:bg-slate-700/40",
                         )}
                       >
@@ -691,7 +691,7 @@ export default function EmployeesPage() {
                             type="checkbox"
                             checked={isTicked}
                             onChange={() => toggleSelect(emp.id)}
-                            className="w-4 h-4 rounded border-gray-300 dark:border-slate-600 accent-[#ea5a10] cursor-pointer"
+                            className="w-4 h-4 rounded border-gray-300 dark:border-slate-600 accent-[#1e9e9b] cursor-pointer"
                           />
                         </td>
 
@@ -708,7 +708,7 @@ export default function EmployeesPage() {
                               </p>
                               <p className={cn(
                                 "text-xs mt-0.5 truncate",
-                                isSelected ? "text-[#ffedd5]" : "text-gray-400 dark:text-slate-500",
+                                isSelected ? "text-[#f3e2d6]" : "text-gray-400 dark:text-slate-500",
                               )}>
                                 {emp.designation.title}
                               </p>
@@ -719,7 +719,7 @@ export default function EmployeesPage() {
                         {/* Department */}
                         <td className={cn(
                           "px-4 py-3.5 text-sm",
-                          isSelected ? "text-[#ffedd5]" : "text-gray-600 dark:text-slate-300",
+                          isSelected ? "text-[#f3e2d6]" : "text-gray-600 dark:text-slate-300",
                         )}>
                           {emp.department.name}
                         </td>
@@ -727,7 +727,7 @@ export default function EmployeesPage() {
                         {/* Joined */}
                         <td className={cn(
                           "px-4 py-3.5 text-sm tabular-nums",
-                          isSelected ? "text-[#ffedd5]" : "text-gray-500 dark:text-slate-400",
+                          isSelected ? "text-[#f3e2d6]" : "text-gray-500 dark:text-slate-400",
                         )}>
                           {fmtDate(emp.dateOfJoining)}
                         </td>
@@ -742,7 +742,7 @@ export default function EmployeesPage() {
                               {emp.latestBpvScore.toFixed(1)}
                             </span>
                           ) : (
-                            <span className={isSelected ? "text-[#fed7aa] text-sm" : "text-gray-400 dark:text-slate-500 text-sm"}>—</span>
+                            <span className={isSelected ? "text-[#e6c6ac] text-sm" : "text-gray-400 dark:text-slate-500 text-sm"}>—</span>
                           )}
                         </td>
 

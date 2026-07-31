@@ -34,7 +34,7 @@ export function Tabs({ tabs, activeTab, onChange, onTabChange, className, onDark
                   ? "border-white text-white"
                   : "border-transparent text-white/50 hover:text-white/80 hover:border-white/30"
                 : tab.id === activeTab
-                  ? "border-[#f9701a] dark:border-[#fb8f4a] text-[#f9701a] dark:text-[#fb8f4a]"
+                  ? "border-[#27B1AE] dark:border-[#4fc4c1] text-[#27B1AE] dark:text-[#4fc4c1]"
                   : "border-transparent text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200 hover:border-gray-300 dark:hover:border-slate-500",
             )}
           >
@@ -48,7 +48,7 @@ export function Tabs({ tabs, activeTab, onChange, onTabChange, className, onDark
                     ? "bg-white/20 text-white"
                     : "bg-white/10 text-white/60"
                   : tab.id === activeTab
-                    ? "bg-[#ffedd5] dark:bg-[#ea5a10]/30 text-[#f9701a] dark:text-[#fb8f4a]"
+                    ? "bg-[#e8f7f7] dark:bg-[#27B1AE]/20 text-[#27B1AE] dark:text-[#4fc4c1]"
                     : "bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400",
               )}>
                 {tab.count}

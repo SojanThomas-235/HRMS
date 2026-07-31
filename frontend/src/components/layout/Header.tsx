@@ -30,7 +30,7 @@ export function Header() {
     : user?.email?.[0]?.toUpperCase() ?? "U";
 
   return (
-    <header className="h-14 flex items-center justify-end gap-1.5 px-5 bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 shrink-0">
+    <header className="h-14 flex items-center justify-end gap-1.5 px-5 bg-white dark:bg-slate-900 border-b border-[#dde8f0] dark:border-slate-700/80 shrink-0 shadow-[0_1px_3px_rgba(0,0,0,0.04)]">
       {/* Theme toggle */}
       <button
         onClick={toggleTheme}
@@ -50,7 +50,7 @@ export function Header() {
           className="flex items-center gap-2.5 rounded-xl px-2.5 py-1.5 hover:bg-gray-100 dark:hover:bg-slate-700/40 transition-colors"
         >
           {/* Avatar ring */}
-          <div className="w-8 h-8 rounded-full bg-primary-600 dark:bg-primary-500 ring-2 ring-primary-600/20 dark:ring-primary-500/20 flex items-center justify-center shadow-sm">
+          <div className="w-8 h-8 rounded-full bg-[#27B1AE] dark:bg-[#1e9e9b] ring-2 ring-[#27B1AE]/20 flex items-center justify-center shadow-sm">
             <span className="text-white text-xs font-semibold leading-none">{initials}</span>
           </div>
           <div className="text-left hidden sm:block">
@@ -71,7 +71,7 @@ export function Header() {
             {/* User info */}
             <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700/60">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-full bg-[#f9701a] flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#27B1AE] to-[#136F9A] flex items-center justify-center shrink-0">
                   <span className="text-white text-xs font-semibold">{initials}</span>
                 </div>
                 <div className="min-w-0">
